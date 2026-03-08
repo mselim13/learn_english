@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../utils/responsive.dart';
 
 class LessonPage extends StatefulWidget {
   const LessonPage({super.key, this.title = 'Ders', this.steps});
@@ -28,37 +29,40 @@ class _LessonPageState extends State<LessonPage> {
 
   @override
   Widget build(BuildContext context) {
+    final padding = Responsive.horizontalPadding(context);
+    final contentPadding = Responsive.cardPadding(context);
+
     return Scaffold(
       backgroundColor: AppTheme.surface,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(padding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               AppTheme.buildAppBar(context, widget.title, showBack: false),
-              const SizedBox(height: 24),
+              SizedBox(height: Responsive.gapLg(context)),
               LinearProgressIndicator(
                 value: (_step + 1) / _steps.length,
                 backgroundColor: AppTheme.primaryLight.withOpacity(0.3),
                 valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primary),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: Responsive.gapSm(context)),
               Text(
                 'Adım ${_step + 1} / ${_steps.length}',
                 style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: Responsive.gapXl(context)),
               Expanded(
                 child: Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(24),
+                  padding: EdgeInsets.all(contentPadding),
                   decoration: AppTheme.cardDecoration,
                   child: SingleChildScrollView(
                     child: Text(
                       _steps[_step],
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: Responsive.fontSizeBody(context),
                         height: 1.6,
                         color: Colors.grey.shade800,
                       ),
@@ -66,7 +70,7 @@ class _LessonPageState extends State<LessonPage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: Responsive.gapMd(context)),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -80,7 +84,9 @@ class _LessonPageState extends State<LessonPage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primary,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    padding: EdgeInsets.symmetric(
+                      vertical: Responsive.buttonPaddingVertical(context),
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),

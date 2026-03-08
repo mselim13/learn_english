@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../services/app_prefs.dart';
+import '../services/profile_notifier.dart';
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -9,9 +11,30 @@ class EditProfilePage extends StatefulWidget {
 }
 
 class _EditProfilePageState extends State<EditProfilePage> {
-  final _nameController = TextEditingController(text: 'Nihan Karaca');
-  final _emailController = TextEditingController(text: 'nihan@example.com');
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
   String _selectedLevel = 'A2';
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    final name = await AppPrefs.getUserName();
+    final email = await AppPrefs.getUserEmail();
+    final level = await AppPrefs.getUserLevel();
+    if (mounted) {
+      setState(() {
+        _nameController.text = name ?? '';
+        _emailController.text = email ?? '';
+        _selectedLevel = level;
+        _loading = false;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -20,8 +43,24 @@ class _EditProfilePageState extends State<EditProfilePage> {
     super.dispose();
   }
 
+  Future<void> _saveProfile() async {
+    final name = _nameController.text.trim().isEmpty ? null : _nameController.text.trim();
+    final email = _emailController.text.trim().isEmpty ? null : _emailController.text.trim();
+    await AppPrefs.setUserName(name);
+    await AppPrefs.setUserEmail(email);
+    await AppPrefs.setUserLevel(_selectedLevel);
+    updateProfileNotifier(ProfileData(name: name, level: _selectedLevel, email: email));
+    if (mounted) Navigator.pop(context);
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_loading) {
+      return Scaffold(
+        backgroundColor: AppTheme.surface,
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
     return Scaffold(
       backgroundColor: AppTheme.surface,
       body: SafeArea(
@@ -127,7 +166,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: _saveProfile,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primary,
                     foregroundColor: Colors.white,

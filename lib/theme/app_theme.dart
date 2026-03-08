@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/responsive.dart';
 
 class AppTheme {
   AppTheme._();
@@ -7,9 +8,21 @@ class AppTheme {
   static const Color primaryLight = Color(0xFFD1BEEB);
   static const Color surface = Color(0xFFF5F0FA);
 
-  static BoxDecoration cardDecoration = BoxDecoration(
+  static BoxDecoration cardDecorationFor(BuildContext context) => BoxDecoration(
     color: Colors.white,
-    borderRadius: BorderRadius.circular(20),
+    borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
+    boxShadow: [
+      BoxShadow(
+        color: Colors.black.withOpacity(0.06),
+        blurRadius: Responsive.gapSm(context) * 1.2,
+        offset: Offset(0, Responsive.gapXs(context)),
+      ),
+    ],
+  );
+
+  static BoxDecoration get cardDecoration => BoxDecoration(
+    color: Colors.white,
+    borderRadius: BorderRadius.circular(18),
     boxShadow: [
       BoxShadow(
         color: Colors.black.withOpacity(0.06),
@@ -20,21 +33,24 @@ class AppTheme {
   );
 
   static Widget buildAppBar(BuildContext context, String title, {bool showBack = true}) {
+    final fontSize = Responsive.fontSizeTitle(context);
+    final iconSize = Responsive.iconSizeSmall(context);
+    final minTouch = Responsive.minTouchTarget(context);
     return Row(
       children: [
         if (showBack)
           IconButton(
             onPressed: () => Navigator.of(context).pop(),
-            icon: const Icon(Icons.arrow_back_ios_new, color: primary, size: 22),
+            icon: Icon(Icons.arrow_back_ios_new, color: primary, size: iconSize),
             padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+            constraints: BoxConstraints(minWidth: minTouch, minHeight: minTouch),
           ),
-        if (showBack) const SizedBox(width: 8),
+        if (showBack) SizedBox(width: Responsive.gapSm(context)),
         Expanded(
           child: Text(
             title,
-            style: const TextStyle(
-              fontSize: 24,
+            style: TextStyle(
+              fontSize: fontSize,
               fontWeight: FontWeight.bold,
               color: primary,
             ),

@@ -1,99 +1,153 @@
 import 'package:flutter/material.dart';
+import '../utils/responsive.dart';
+import '../services/profile_notifier.dart';
 import 'practice_room_page.dart';
 import 'listening_exercise_page.dart';
-import 'lesson_page.dart';
 import 'quiz_page.dart';
-import 'level_roadmap_page.dart';
-import 'daily_goal_page.dart';
-import 'badges_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive.width(context);
+    final horizontalPad = Responsive.horizontalPadding(context);
+    final profileHeight = Responsive.scaled(context, min: 200.0, max: 300.0);
+    final avatarRadius = Responsive.avatarSize(context) / 2;
+    final gridCols = Responsive.gridColumns(context);
+    final gridSpacing = Responsive.spacing(context, multiplier: 2);
+    final gapMd = Responsive.gapMd(context);
+    final topMargin = Responsive.gapLg(context);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F0FA),
-
       body: SafeArea(
         child: Column(
           children: [
-
             /// Üst Profil Alanı
             Stack(
               clipBehavior: Clip.none,
               alignment: Alignment.center,
               children: [
                 Container(
-                  height: 250,
+                  height: profileHeight,
                   width: double.infinity,
-                  margin: const EdgeInsets.only(top: 20, left: 20, right: 20),
+                  margin: EdgeInsets.only(top: topMargin, left: horizontalPad, right: horizontalPad),
                   decoration: BoxDecoration(
                     color: const Color(0xFFEBE3F8),
-                    borderRadius: BorderRadius.circular(30),
+                    borderRadius: BorderRadius.circular(Responsive.cardRadius(context) + 4),
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const SizedBox(height: 140),
+                      SizedBox(height: avatarRadius * 2 + Responsive.gapLg(context)),
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 30, vertical: 15),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: r * 0.07,
+                          vertical: Responsive.buttonPaddingVertical(context),
+                        ),
+                        margin: EdgeInsets.symmetric(horizontal: horizontalPad),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(15),
-                          border: Border.all(
-                              color: const Color(0xFFD1BEEB)),
+                          borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
+                          border: Border.all(color: const Color(0xFFD1BEEB)),
                         ),
-                        child: const Text(
-                          "Nihan Karaca - A2",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF4A148C),
-                          ),
+                        child: ValueListenableBuilder<ProfileData?>(
+                          valueListenable: profileNotifier,
+                          builder: (context, data, _) {
+                            if (data != null) {
+                              return Text(
+                                data.displayTitle,
+                                style: TextStyle(
+                                  fontSize: Responsive.fontSizeTitleSmall(context),
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF4A148C),
+                                ),
+                              );
+                            }
+                            return FutureBuilder<ProfileData>(
+                              future: loadProfileFromPrefs(),
+                              builder: (context, snapshot) {
+                                if (snapshot.hasData) {
+                                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                                    if (profileNotifier.value == null) {
+                                      profileNotifier.value = snapshot.data;
+                                    }
+                                  });
+                                  return Text(
+                                    snapshot.data!.displayTitle,
+                                    style: TextStyle(
+                                      fontSize: Responsive.fontSizeTitleSmall(context),
+                                      fontWeight: FontWeight.bold,
+                                      color: const Color(0xFF4A148C),
+                                    ),
+                                  );
+                                }
+                                return Text(
+                                  'Kullanıcı - A2',
+                                  style: TextStyle(
+                                    fontSize: Responsive.fontSizeTitleSmall(context),
+                                    fontWeight: FontWeight.bold,
+                                    color: const Color(0xFF4A148C),
+                                  ),
+                                );
+                              },
+                            );
+                          },
                         ),
                       ),
                     ],
                   ),
                 ),
-
-                /// Profil Avatar
                 Positioned(
-                  top: 40,
+                  top: Responsive.gapLg(context),
                   child: Container(
-                    padding: const EdgeInsets.all(5),
+                    padding: EdgeInsets.all(Responsive.gapXs(context)),
                     decoration: const BoxDecoration(
                       color: Color(0xFFD1BEEB),
                       shape: BoxShape.circle,
                     ),
-                    child: const CircleAvatar(
-                      radius: 55,
+                    child: CircleAvatar(
+                      radius: avatarRadius,
                       backgroundColor: Colors.white,
-                      backgroundImage:
-                      AssetImage("assets/images/panda_avatar.png"),
+                      backgroundImage: const AssetImage("assets/images/panda_avatar.png"),
                     ),
                   ),
                 ),
               ],
             ),
 
-            const SizedBox(height: 24),
+            SizedBox(height: Responsive.spacing(context, multiplier: 2)),
 
             /// İstatistikler
-            Padding( padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 30), child: IntrinsicHeight( child: Row( mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [ _buildStatItem(Icons.workspace_premium_outlined, "13", Colors.teal), const VerticalDivider(thickness: 1, color: Colors.grey), _buildStatItem(Icons.trending_up, "22 / 250", Colors.redAccent), const VerticalDivider(thickness: 1, color: Colors.grey), _buildStatItem(Icons.collections_bookmark_outlined, "2 / 5", Colors.pinkAccent), ], ), ), ),
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: gapMd, horizontal: horizontalPad),
+              child: IntrinsicHeight(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildStatItem(context, Icons.workspace_premium_outlined, "13", Colors.teal),
+                    const VerticalDivider(thickness: 1, color: Colors.grey),
+                    _buildStatItem(context, Icons.trending_up, "22 / 250", Colors.redAccent),
+                    const VerticalDivider(thickness: 1, color: Colors.grey),
+                    _buildStatItem(context, Icons.collections_bookmark_outlined, "2 / 5", Colors.pinkAccent),
+                  ],
+                ),
+              ),
+            ),
 
-            const Divider(indent: 30, endIndent: 30),
+            Divider(indent: horizontalPad, endIndent: horizontalPad),
 
             /// Kategoriler
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(horizontalPad * 0.9),
                 child: GridView.count(
                   physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 30,
-                  mainAxisSpacing: 30,
+                  crossAxisCount: gridCols,
+                  crossAxisSpacing: gridSpacing,
+                  mainAxisSpacing: gridSpacing,
+                  childAspectRatio: 1.1,
                   children: [
                     _buildCategoryCard(context, "Words", const Color(0xFFAEF4D1)),
                     _buildCategoryCard(context, "Writing", const Color(0xFFC76D6D)),
@@ -109,26 +163,25 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  /// İstatistik Widget
-  Widget _buildStatItem(
-      IconData icon, String value, Color iconColor) {
+  Widget _buildStatItem(BuildContext context, IconData icon, String value, Color iconColor) {
+    final iconSize = Responsive.iconSizeMedium(context);
+    final fontSize = Responsive.fontSizeTitleSmall(context);
     return Column(
       children: [
-        Icon(icon, color: iconColor, size: 30),
-        const SizedBox(height: 5),
+        Icon(icon, color: iconColor, size: iconSize),
+        SizedBox(height: Responsive.gapXs(context)),
         Text(
           value,
-          style: const TextStyle(
-            fontSize: 20,
+          style: TextStyle(
+            fontSize: fontSize,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF4A148C),
+            color: const Color(0xFF4A148C),
           ),
         ),
       ],
     );
   }
 
-  /// Kategori Kartı
   Widget _buildCategoryCard(BuildContext context, String title, Color color) {
     return GestureDetector(
       onTap: () {
@@ -153,20 +206,20 @@ class HomePage extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: color,
-          borderRadius: BorderRadius.circular(25),
+          borderRadius: BorderRadius.circular(Responsive.cardRadius(context) + 2),
           boxShadow: [
             BoxShadow(
-              blurRadius: 10,
+              blurRadius: Responsive.gapSm(context) * 1.2,
               color: Colors.black.withOpacity(0.1),
-              offset: const Offset(0, 4),
+              offset: Offset(0, Responsive.gapXs(context)),
             ),
           ],
         ),
         alignment: Alignment.center,
         child: Text(
           title,
-          style: const TextStyle(
-            fontSize: 22,
+          style: TextStyle(
+            fontSize: Responsive.fontSizeTitleSmall(context),
             fontWeight: FontWeight.bold,
             color: Colors.white,
           ),
@@ -174,4 +227,5 @@ class HomePage extends StatelessWidget {
       ),
     );
   }
+
 }

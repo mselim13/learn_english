@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/responsive.dart';
 import 'help_faq_page.dart';
 import 'about_page.dart';
 import 'terms_page.dart';
@@ -29,8 +30,16 @@ class _SettingsPageState extends State<SettingsPage> {
     return Scaffold(
       backgroundColor: _surface,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: Responsive.maxContentWidth(context),
+            ),
+            child: SingleChildScrollView(
+              padding: EdgeInsets.symmetric(
+                horizontal: Responsive.horizontalPadding(context),
+                vertical: Responsive.verticalPadding(context),
+              ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -120,6 +129,8 @@ class _SettingsPageState extends State<SettingsPage> {
             ],
           ),
         ),
+        ),
+      ),
       ),
     );
   }

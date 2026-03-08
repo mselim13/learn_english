@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/responsive.dart';
 import 'badges_page.dart';
 
 enum _Period { daily, weekly, monthly }
@@ -45,37 +46,47 @@ class _StatsPageState extends State<StatsPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F0FA),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Column(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: Responsive.maxContentWidth(context),
+            ),
+            child: SingleChildScrollView(
+              padding: EdgeInsets.symmetric(
+                horizontal: Responsive.horizontalPadding(context),
+                vertical: Responsive.verticalPadding(context),
+              ),
+              child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildHeader(context),
-              const SizedBox(height: 16),
+              SizedBox(height: Responsive.gapMd(context)),
               _buildBarChartCard(context),
-              const SizedBox(height: 20),
+              SizedBox(height: Responsive.gapMd(context)),
               _buildWeeklyGoalCard(),
-              const SizedBox(height: 16),
+              SizedBox(height: Responsive.gapMd(context)),
               _buildLevelProgressCard(),
-              const SizedBox(height: 20),
+              SizedBox(height: Responsive.gapMd(context)),
               IntrinsicHeight(
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Expanded(child: _buildLearningTimeCard(context)),
-                    const SizedBox(width: 12),
+                    SizedBox(width: Responsive.gapSm(context)),
                     Expanded(child: _buildSkillMasterCard(context)),
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: Responsive.gapMd(context)),
               _buildStreakCard(context),
-              const SizedBox(height: 16),
+              SizedBox(height: Responsive.gapMd(context)),
               _buildWeeklySummaryCard(),
-              const SizedBox(height: 20),
+              SizedBox(height: Responsive.gapMd(context)),
               _buildBadgesSection(context),
-              const SizedBox(height: 24),
+              SizedBox(height: Responsive.gapLg(context)),
             ],
+              ),
+            ),
           ),
         ),
       ),

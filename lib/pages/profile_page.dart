@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../utils/responsive.dart';
+import '../services/app_prefs.dart';
+import '../services/profile_notifier.dart';
 import 'settings_page.dart';
 import 'edit_profile_page.dart';
 import 'notification_settings_page.dart';
@@ -7,6 +10,7 @@ import 'daily_goal_page.dart';
 import 'badges_page.dart';
 import 'help_faq_page.dart';
 import 'translate_page.dart';
+import 'welcome_page.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -20,19 +24,27 @@ class ProfilePage extends StatelessWidget {
     return Scaffold(
       backgroundColor: _surface,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: Responsive.maxContentWidth(context),
+            ),
+            child: SingleChildScrollView(
+              padding: EdgeInsets.symmetric(
+                horizontal: Responsive.horizontalPadding(context),
+                vertical: Responsive.verticalPadding(context),
+              ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildHeader(context),
-              const SizedBox(height: 24),
+              SizedBox(height: Responsive.gapLg(context)),
               _buildProfileCard(context),
-              const SizedBox(height: 20),
+              SizedBox(height: Responsive.gapMd(context)),
               _buildStatsRow(context),
-              const SizedBox(height: 24),
-              _buildSectionTitle('Hesap'),
-              const SizedBox(height: 12),
+              SizedBox(height: Responsive.gapLg(context)),
+              _buildSectionTitle(context, 'Hesap'),
+              SizedBox(height: Responsive.gapSm(context)),
               _buildOptionCard(
                 context,
                 icon: Icons.person_outline,
@@ -40,7 +52,7 @@ class ProfilePage extends StatelessWidget {
                 subtitle: 'İsim, fotoğraf, seviye',
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EditProfilePage())),
               ),
-              const SizedBox(height: 10),
+              SizedBox(height: Responsive.gapSm(context)),
               _buildOptionCard(
                 context,
                 icon: Icons.notifications_outlined,
@@ -48,9 +60,9 @@ class ProfilePage extends StatelessWidget {
                 subtitle: 'Hatırlatmalar ve bildirimler',
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationSettingsPage())),
               ),
-              const SizedBox(height: 24),
-              _buildSectionTitle('Öğrenme'),
-              const SizedBox(height: 12),
+              SizedBox(height: Responsive.gapLg(context)),
+              _buildSectionTitle(context, 'Öğrenme'),
+              SizedBox(height: Responsive.gapSm(context)),
               _buildOptionCard(
                 context,
                 icon: Icons.translate_outlined,
@@ -58,7 +70,7 @@ class ProfilePage extends StatelessWidget {
                 subtitle: 'Kelime veya ifade çevir',
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TranslatePage())),
               ),
-              const SizedBox(height: 10),
+              SizedBox(height: Responsive.gapSm(context)),
               _buildOptionCard(
                 context,
                 icon: Icons.map_outlined,
@@ -66,7 +78,7 @@ class ProfilePage extends StatelessWidget {
                 subtitle: 'A1\'den C2\'ye ilerleme',
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LevelRoadmapPage())),
               ),
-              const SizedBox(height: 10),
+              SizedBox(height: Responsive.gapSm(context)),
               _buildOptionCard(
                 context,
                 icon: Icons.flag_outlined,
@@ -74,7 +86,7 @@ class ProfilePage extends StatelessWidget {
                 subtitle: 'Hedef süre ve ilerleme',
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DailyGoalPage())),
               ),
-              const SizedBox(height: 10),
+              SizedBox(height: Responsive.gapSm(context)),
               _buildOptionCard(
                 context,
                 icon: Icons.workspace_premium_outlined,
@@ -82,9 +94,9 @@ class ProfilePage extends StatelessWidget {
                 subtitle: 'Kazandığın başarılar',
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BadgesPage())),
               ),
-              const SizedBox(height: 24),
-              _buildSectionTitle('Uygulama'),
-              const SizedBox(height: 12),
+              SizedBox(height: Responsive.gapLg(context)),
+              _buildSectionTitle(context, 'Uygulama'),
+              SizedBox(height: Responsive.gapSm(context)),
               _buildOptionCard(
                 context,
                 icon: Icons.help_outline,
@@ -92,13 +104,15 @@ class ProfilePage extends StatelessWidget {
                 subtitle: 'SSS, iletişim',
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HelpFaqPage())),
               ),
-              const SizedBox(height: 10),
-              const SizedBox(height: 28),
+              SizedBox(height: Responsive.gapSm(context)),
+              SizedBox(height: Responsive.gapXl(context)),
               _buildLogoutButton(context),
-              const SizedBox(height: 24),
+              SizedBox(height: Responsive.gapLg(context)),
             ],
           ),
         ),
+        ),
+      ),
       ),
     );
   }
@@ -107,10 +121,10 @@ class ProfilePage extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        const Text(
+        Text(
           'Profilim',
           style: TextStyle(
-            fontSize: 24,
+            fontSize: Responsive.fontSizeTitle(context),
             fontWeight: FontWeight.bold,
             color: _primary,
           ),
@@ -121,19 +135,20 @@ class ProfilePage extends StatelessWidget {
               MaterialPageRoute(builder: (_) => const SettingsPage()),
             );
           },
-          icon: const Icon(Icons.settings_outlined, color: _primary, size: 26),
+          icon: Icon(Icons.settings_outlined, color: _primary, size: Responsive.iconSizeMedium(context)),
         ),
       ],
     );
   }
 
   Widget _buildProfileCard(BuildContext context) {
+    final pad = Responsive.cardPadding(context);
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(pad),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.06),
@@ -147,9 +162,13 @@ class ProfilePage extends StatelessWidget {
           Stack(
             children: [
               CircleAvatar(
-                radius: 50,
+                radius: Responsive.avatarSize(context) / 2,
                 backgroundColor: _primaryLight,
-                child: Icon(Icons.person, color: Colors.white.withOpacity(0.9), size: 52),
+                child: Icon(
+                  Icons.person,
+                  color: Colors.white.withOpacity(0.9),
+                  size: Responsive.avatarSize(context),
+                ),
               ),
               Positioned(
                 right: 0,
@@ -157,47 +176,140 @@ class ProfilePage extends StatelessWidget {
                 child: GestureDetector(
                   onTap: () {},
                   child: Container(
-                    padding: const EdgeInsets.all(8),
+                    padding: EdgeInsets.all(Responsive.gapSm(context)),
                     decoration: const BoxDecoration(
                       color: _primary,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.camera_alt, color: Colors.white, size: 18),
+                    child: Icon(
+                      Icons.camera_alt,
+                      color: Colors.white,
+                      size: Responsive.iconSizeSmall(context),
+                    ),
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          const Text(
-            'Nihan Karaca',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: _primary,
-            ),
+          SizedBox(height: Responsive.gapMd(context)),
+          ValueListenableBuilder<ProfileData?>(
+            valueListenable: profileNotifier,
+            builder: (context, data, _) {
+              if (data != null) {
+                return Column(
+                  children: [
+                    Text(
+                      data.displayName,
+                      style: TextStyle(
+                        fontSize: Responsive.fontSizeTitle(context),
+                        fontWeight: FontWeight.bold,
+                        color: _primary,
+                      ),
+                    ),
+                    SizedBox(height: Responsive.gapXs(context) * 1.5),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: Responsive.gapMd(context),
+                        vertical: Responsive.gapXs(context) * 1.5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _primaryLight.withOpacity(0.5),
+                        borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
+                      ),
+                      child: Text(
+                        'Seviye ${data.level}',
+                        style: TextStyle(
+                          fontSize: Responsive.fontSizeBodySmall(context),
+                          fontWeight: FontWeight.w600,
+                          color: _primary,
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }
+              return FutureBuilder<ProfileData>(
+                future: loadProfileFromPrefs(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (profileNotifier.value == null) {
+                        profileNotifier.value = snapshot.data;
+                      }
+                    });
+                    final d = snapshot.data!;
+                    return Column(
+                      children: [
+                        Text(
+                          d.displayName,
+                          style: TextStyle(
+                            fontSize: Responsive.fontSizeTitle(context),
+                            fontWeight: FontWeight.bold,
+                            color: _primary,
+                          ),
+                        ),
+                        SizedBox(height: Responsive.gapXs(context) * 1.5),
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: Responsive.gapMd(context),
+                            vertical: Responsive.gapXs(context) * 1.5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _primaryLight.withOpacity(0.5),
+                            borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
+                          ),
+                          child: Text(
+                            'Seviye ${d.level}',
+                            style: TextStyle(
+                              fontSize: Responsive.fontSizeBodySmall(context),
+                              fontWeight: FontWeight.w600,
+                              color: _primary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+                  return Column(
+                    children: [
+                      Text(
+                        'Kullanıcı',
+                        style: TextStyle(
+                          fontSize: Responsive.fontSizeTitle(context),
+                          fontWeight: FontWeight.bold,
+                          color: _primary,
+                        ),
+                      ),
+                      SizedBox(height: Responsive.gapXs(context) * 1.5),
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: Responsive.gapMd(context),
+                          vertical: Responsive.gapXs(context) * 1.5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _primaryLight.withOpacity(0.5),
+                          borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
+                        ),
+                        child: Text(
+                          'Seviye A2',
+                          style: TextStyle(
+                            fontSize: Responsive.fontSizeBodySmall(context),
+                            fontWeight: FontWeight.w600,
+                            color: _primary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
           ),
-          const SizedBox(height: 6),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-            decoration: BoxDecoration(
-              color: _primaryLight.withOpacity(0.5),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Text(
-              'Seviye A2',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: _primary,
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
+          SizedBox(height: Responsive.gapSm(context)),
           Text(
             'Üyelik Tarihi: Kasım 2024',
             style: TextStyle(
-              fontSize: 13,
+              fontSize: Responsive.fontSizeCaption(context),
               color: Colors.grey.shade600,
             ),
           ),
@@ -208,10 +320,13 @@ class ProfilePage extends StatelessWidget {
 
   Widget _buildStatsRow(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+      padding: EdgeInsets.symmetric(
+        vertical: Responsive.gapMd(context),
+        horizontal: Responsive.gapMd(context),
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.06),
@@ -224,36 +339,36 @@ class ProfilePage extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _buildStatItem(Icons.menu_book_outlined, '250', 'Kelime'),
+            _buildStatItem(context, Icons.menu_book_outlined, '250', 'Kelime'),
             const VerticalDivider(thickness: 1, color: Colors.grey),
-            _buildStatItem(Icons.trending_up, 'A2', 'Seviye'),
+            _buildStatItem(context, Icons.trending_up, 'A2', 'Seviye'),
             const VerticalDivider(thickness: 1, color: Colors.grey),
-            _buildStatItem(Icons.workspace_premium_outlined, '4', 'Rozet'),
+            _buildStatItem(context, Icons.workspace_premium_outlined, '4', 'Rozet'),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildStatItem(IconData icon, String value, String label) {
+  Widget _buildStatItem(BuildContext context, IconData icon, String value, String label) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(icon, color: _primary, size: 28),
-        const SizedBox(height: 8),
+        Icon(icon, color: _primary, size: Responsive.iconSizeMedium(context)),
+        SizedBox(height: Responsive.gapSm(context)),
         Text(
           value,
-          style: const TextStyle(
-            fontSize: 18,
+          style: TextStyle(
+            fontSize: Responsive.fontSizeTitleSmall(context),
             fontWeight: FontWeight.bold,
             color: _primary,
           ),
         ),
-        const SizedBox(height: 2),
+        SizedBox(height: Responsive.gapXs(context) * 0.5),
         Text(
           label,
           style: TextStyle(
-            fontSize: 12,
+            fontSize: Responsive.fontSizeCaption(context),
             color: Colors.grey.shade600,
           ),
         ),
@@ -261,11 +376,11 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(BuildContext context, String title) {
     return Text(
       title,
       style: TextStyle(
-        fontSize: 18,
+        fontSize: Responsive.fontSizeTitleSmall(context),
         fontWeight: FontWeight.bold,
         color: Colors.grey.shade800,
       ),
@@ -279,16 +394,20 @@ class ProfilePage extends StatelessWidget {
     required String subtitle,
     required VoidCallback onTap,
   }) {
+    final radius = Responsive.cardRadius(context);
     return Material(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(radius),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(radius),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          padding: EdgeInsets.symmetric(
+            horizontal: Responsive.horizontalPadding(context),
+            vertical: Responsive.gapMd(context),
+          ),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(radius),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.06),
@@ -300,38 +419,42 @@ class ProfilePage extends StatelessWidget {
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: EdgeInsets.all(Responsive.gapSm(context)),
                 decoration: BoxDecoration(
                   color: _primaryLight.withOpacity(0.5),
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(Responsive.gapMd(context)),
                 ),
-                child: Icon(icon, color: _primary, size: 24),
+                child: Icon(icon, color: _primary, size: Responsive.iconSizeMedium(context)),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: Responsive.gapMd(context)),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
-                        fontSize: 16,
+                      style: TextStyle(
+                        fontSize: Responsive.fontSizeBody(context),
                         fontWeight: FontWeight.w600,
                         color: _primary,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    SizedBox(height: Responsive.gapXs(context) * 0.5),
                     Text(
                       subtitle,
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: Responsive.fontSizeBodySmall(context),
                         color: Colors.grey.shade600,
                       ),
                     ),
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right, color: Colors.grey.shade500, size: 24),
+              Icon(
+                Icons.chevron_right,
+                color: Colors.grey.shade500,
+                size: Responsive.iconSizeMedium(context),
+              ),
             ],
           ),
         ),
@@ -340,18 +463,27 @@ class ProfilePage extends StatelessWidget {
   }
 
   Widget _buildLogoutButton(BuildContext context) {
+    final radius = Responsive.cardRadius(context);
     return SizedBox(
       width: double.infinity,
       child: Material(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(radius),
         child: InkWell(
-          onTap: () {},
-          borderRadius: BorderRadius.circular(20),
+          onTap: () async {
+            await AppPrefs.setLoggedIn(false);
+            profileNotifier.value = null;
+            if (!context.mounted) return;
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (_) => const WelcomePage()),
+              (route) => false,
+            );
+          },
+          borderRadius: BorderRadius.circular(radius),
           child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 18),
+            padding: EdgeInsets.symmetric(vertical: Responsive.buttonPaddingVertical(context) + Responsive.gapXs(context)),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(radius),
               border: Border.all(color: Colors.red.shade200),
               boxShadow: [
                 BoxShadow(
@@ -364,12 +496,16 @@ class ProfilePage extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.logout, color: Colors.red.shade400, size: 24),
-                const SizedBox(width: 12),
+                Icon(
+                  Icons.logout,
+                  color: Colors.red.shade400,
+                  size: Responsive.iconSizeMedium(context),
+                ),
+                SizedBox(width: Responsive.gapSm(context)),
                 Text(
                   'Çıkış yap',
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: Responsive.fontSizeBody(context),
                     fontWeight: FontWeight.w600,
                     color: Colors.red.shade400,
                   ),

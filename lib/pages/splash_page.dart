@@ -23,8 +23,11 @@ class _SplashPageState extends State<SplashPage> {
     await Future.delayed(const Duration(milliseconds: 1800));
     if (!mounted) return;
     final seen = await AppPrefs.getOnboardingSeen();
-    final remember = await AppPrefs.getRememberMe();
+    final authenticated = await AppPrefs.isAuthenticated();
     if (!mounted) return;
+    if (!authenticated) {
+      await AppPrefs.setLoggedIn(false);
+    }
     if (!seen) {
       Navigator.pushReplacement(
         context,
@@ -35,7 +38,7 @@ class _SplashPageState extends State<SplashPage> {
           transitionDuration: const Duration(milliseconds: 400),
         ),
       );
-    } else if (remember) {
+    } else if (authenticated) {
       Navigator.pushReplacement(
         context,
         PageRouteBuilder(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:learn_english/navigation/main_navigation_page.dart';
 import 'package:learn_english/services/app_prefs.dart';
+import 'package:learn_english/services/profile_notifier.dart';
 import 'forgot_password_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -128,9 +129,40 @@ class _LoginPageState extends State<LoginPage> {
                   /// Giriş Butonu
                   GestureDetector(
                     onTap: () async {
+                      final enteredEmail = _emailController.text.trim();
+                      if (enteredEmail.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Lütfen e-posta adresinizi girin.')),
+                        );
+                        return;
+                      }
+                      final registeredEmail = await AppPrefs.getUserEmail();
+                      if (registeredEmail == null || registeredEmail.isEmpty) {
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Kayıtlı hesap bulunamadı. Lütfen önce "Hesap Oluştur" ile kayıt olun.'),
+                            duration: Duration(seconds: 4),
+                          ),
+                        );
+                        return;
+                      }
+                      if (enteredEmail.toLowerCase() != registeredEmail.toLowerCase()) {
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Bu e-posta adresi ile kayıtlı hesap bulunamadı.'),
+                            duration: Duration(seconds: 3),
+                          ),
+                        );
+                        return;
+                      }
+                      await AppPrefs.setLoggedIn(true);
+                      final data = await loadProfileFromPrefs();
+                      updateProfileNotifier(data);
                       if (_rememberMe) {
                         await AppPrefs.setRememberMe(true);
-                        await AppPrefs.setSavedEmail(_emailController.text.trim().isEmpty ? null : _emailController.text.trim());
+                        await AppPrefs.setSavedEmail(enteredEmail.isEmpty ? null : enteredEmail);
                       } else {
                         await AppPrefs.setRememberMe(false);
                         await AppPrefs.setSavedEmail(null);

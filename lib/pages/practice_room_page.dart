@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../utils/responsive.dart';
 
 class PracticeRoomPage extends StatefulWidget {
   const PracticeRoomPage({super.key, this.mode = 'speaking'});
@@ -22,47 +23,57 @@ class _PracticeRoomPageState extends State<PracticeRoomPage> {
   @override
   Widget build(BuildContext context) {
     final isSpeaking = widget.mode == 'speaking';
+    final pad = Responsive.horizontalPadding(context);
+    final spacing = Responsive.spacing(context);
     final topics = isSpeaking
         ? ['Kendini tanıt', 'Gününü anlat', 'En sevdiğin yemek', 'Tatil planları', 'Hobilerin']
         : ['Kendini tanıt', 'Bir anını yaz', 'Hayalindeki iş', 'Sevdiğin bir yer', 'Öneri mektubu'];
     return Scaffold(
       backgroundColor: AppTheme.surface,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: Responsive.maxContentWidth(context),
+            ),
+            child: Padding(
+              padding: EdgeInsets.all(pad),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               AppTheme.buildAppBar(context, isSpeaking ? 'Konuşma pratiği' : 'Yazma pratiği'),
-              const SizedBox(height: 16),
+              SizedBox(height: spacing),
               Text(
                 'Konu seç',
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: Responsive.fontSizeBodySmall(context),
                   fontWeight: FontWeight.w600,
                   color: Colors.grey.shade700,
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: spacing * 0.5),
               SizedBox(
-                height: 44,
+                height: Responsive.minTouchTarget(context) + 8,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: topics.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 10),
+                  separatorBuilder: (_, __) => SizedBox(width: spacing),
                   itemBuilder: (context, i) {
                     return ActionChip(
-                      label: Text(topics[i]),
+                      label: Text(
+                        topics[i],
+                        style: TextStyle(fontSize: Responsive.fontSizeBodySmall(context)),
+                      ),
                       onPressed: () {},
                       backgroundColor: i == 0 ? AppTheme.primaryLight.withOpacity(0.5) : Colors.white,
                     );
                   },
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: spacing * 2),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(Responsive.cardPadding(context)),
                 decoration: AppTheme.cardDecoration,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -70,15 +81,15 @@ class _PracticeRoomPageState extends State<PracticeRoomPage> {
                     Text(
                       'Konu',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: Responsive.fontSizeCaption(context),
                         color: Colors.grey.shade600,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    const Text(
+                    SizedBox(height: spacing * 0.5),
+                    Text(
                       'Kendini kısa bir cümleyle tanıt.',
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: Responsive.fontSizeTitleSmall(context),
                         fontWeight: FontWeight.w600,
                         color: AppTheme.primary,
                       ),
@@ -86,43 +97,46 @@ class _PracticeRoomPageState extends State<PracticeRoomPage> {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: spacing * 2),
               if (isSpeaking) ...[
                 Center(
                   child: GestureDetector(
                     onTap: () => setState(() => _recording = !_recording),
                     child: Container(
-                      width: 120,
-                      height: 120,
+                      width: Responsive.iconSizeLarge(context) * 1.4,
+                      height: Responsive.iconSizeLarge(context) * 1.4,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: _recording ? Colors.red.shade100 : AppTheme.primaryLight.withOpacity(0.5),
                       ),
                       child: Icon(
                         _recording ? Icons.stop : Icons.mic,
-                        size: 56,
+                        size: Responsive.iconSizeLarge(context),
                         color: _recording ? Colors.red : AppTheme.primary,
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: spacing),
                 Center(
                   child: Text(
                     _recording ? 'Kaydediliyor...' : 'Mikrofona dokun',
-                    style: TextStyle(color: Colors.grey.shade600),
+                    style: TextStyle(
+                      fontSize: Responsive.fontSizeBody(context),
+                      color: Colors.grey.shade600,
+                    ),
                   ),
                 ),
               ] else ...[
-                const Text(
+                Text(
                   'Cevabını yaz:',
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: Responsive.fontSizeBody(context),
                     fontWeight: FontWeight.w600,
                     color: AppTheme.primary,
                   ),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: spacing),
                 TextField(
                   controller: _controller,
                   maxLines: 5,
@@ -131,7 +145,7 @@ class _PracticeRoomPageState extends State<PracticeRoomPage> {
                     filled: true,
                     fillColor: Colors.white,
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
                       borderSide: BorderSide(color: Colors.grey.shade300),
                     ),
                   ),
@@ -145,15 +159,20 @@ class _PracticeRoomPageState extends State<PracticeRoomPage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primary,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    padding: EdgeInsets.symmetric(
+                      vertical: Responsive.buttonPaddingVertical(context),
+                    ),
+                    minimumSize: Size(0, Responsive.minTouchTarget(context)),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
                     ),
                   ),
                   child: const Text('Gönder'),
                 ),
               ),
             ],
+              ),
+            ),
           ),
         ),
       ),

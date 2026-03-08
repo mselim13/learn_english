@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../utils/responsive.dart';
 
 class ListeningExercisePage extends StatefulWidget {
   const ListeningExercisePage({super.key});
@@ -42,33 +43,44 @@ class _ListeningExercisePageState extends State<ListeningExercisePage> {
 
   @override
   Widget build(BuildContext context) {
+    final pad = Responsive.horizontalPadding(context);
+    final spacing = Responsive.spacing(context);
+
     return Scaffold(
       backgroundColor: AppTheme.surface,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AppTheme.buildAppBar(context, 'Dinleme'),
-              const SizedBox(height: 24),
-              Text(
-                'Cümleyi dinle ve dinlediklerini yaz. İleride kontrol edilecek.',
-                style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
-              ),
-              const SizedBox(height: 32),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(28),
-                decoration: AppTheme.cardDecoration,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: Responsive.maxContentWidth(context),
+            ),
+            child: Padding(
+              padding: EdgeInsets.all(pad),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AppTheme.buildAppBar(context, 'Dinleme'),
+                  SizedBox(height: spacing * 2),
+                  Text(
+                    'Cümleyi dinle ve dinlediklerini yaz. İleride kontrol edilecek.',
+                    style: TextStyle(
+                      fontSize: Responsive.fontSizeBodySmall(context),
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
+                  SizedBox(height: spacing * 3),
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(Responsive.cardPadding(context)),
+                    decoration: AppTheme.cardDecoration,
                 child: Column(
                   children: [
                     Icon(
                       Icons.headphones,
-                      size: 64,
+                      size: Responsive.iconSizeLarge(context),
                       color: AppTheme.primary.withOpacity(0.8),
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: spacing * 2),
                     AnimatedCrossFade(
                       duration: const Duration(milliseconds: 300),
                       crossFadeState: _showText
@@ -77,7 +89,7 @@ class _ListeningExercisePageState extends State<ListeningExercisePage> {
                       firstChild: Text(
                         '••••••••••••••••••••',
                         style: TextStyle(
-                          fontSize: 22,
+                          fontSize: Responsive.fontSizeTitle(context),
                           letterSpacing: 4,
                           color: Colors.grey.shade400,
                         ),
@@ -85,8 +97,8 @@ class _ListeningExercisePageState extends State<ListeningExercisePage> {
                       secondChild: Text(
                         _sentences[_currentIndex],
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 20,
+                        style: TextStyle(
+                          fontSize: Responsive.fontSizeTitleSmall(context),
                           fontWeight: FontWeight.w600,
                           color: AppTheme.primary,
                         ),
@@ -95,7 +107,7 @@ class _ListeningExercisePageState extends State<ListeningExercisePage> {
                   ],
                 ),
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: spacing * 3),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -105,28 +117,35 @@ class _ListeningExercisePageState extends State<ListeningExercisePage> {
                       await Future.delayed(const Duration(seconds: 2));
                       if (mounted) setState(() => _playing = false);
                     },
-                    icon: Icon(_playing ? Icons.stop : Icons.play_arrow),
+                    icon: Icon(
+                      _playing ? Icons.stop : Icons.play_arrow,
+                      size: Responsive.iconSizeLarge(context) * 0.6,
+                    ),
                     style: IconButton.styleFrom(
                       backgroundColor: AppTheme.primary,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.all(20),
+                      padding: EdgeInsets.all(Responsive.cardPadding(context) * 0.7),
+                      minimumSize: Size(
+                        Responsive.minTouchTarget(context) * 2,
+                        Responsive.minTouchTarget(context) * 2,
+                      ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: spacing * 2),
               Text(
                 'Dinlediklerini yaz',
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: Responsive.fontSizeBody(context),
                   fontWeight: FontWeight.w600,
                   color: Colors.grey.shade800,
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: spacing),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(Responsive.cardPadding(context)),
                 decoration: AppTheme.cardDecoration,
                 child: TextField(
                   controller: _writingControllers[_currentIndex],
@@ -138,22 +157,31 @@ class _ListeningExercisePageState extends State<ListeningExercisePage> {
                     border: InputBorder.none,
                     isDense: true,
                   ),
-                  style: const TextStyle(fontSize: 16),
+                  style: TextStyle(fontSize: Responsive.fontSizeBody(context)),
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: spacing),
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
                   onPressed: () => setState(() => _showText = !_showText),
-                  icon: Icon(_showText ? Icons.visibility_off : Icons.visibility),
-                  label: Text(_showText ? 'Metni gizle' : 'Metni göster'),
+                  icon: Icon(
+                    _showText ? Icons.visibility_off : Icons.visibility,
+                    size: Responsive.iconSizeSmall(context),
+                  ),
+                  label: Text(
+                    _showText ? 'Metni gizle' : 'Metni göster',
+                    style: TextStyle(fontSize: Responsive.fontSizeButton(context)),
+                  ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppTheme.primary,
                     side: const BorderSide(color: AppTheme.primary),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    padding: EdgeInsets.symmetric(
+                      vertical: Responsive.buttonPaddingVertical(context),
+                    ),
+                    minimumSize: Size(0, Responsive.minTouchTarget(context)),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
                     ),
                   ),
                 ),
@@ -163,6 +191,12 @@ class _ListeningExercisePageState extends State<ListeningExercisePage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   IconButton(
+                    style: IconButton.styleFrom(
+                      minimumSize: Size(
+                        Responsive.minTouchTarget(context),
+                        Responsive.minTouchTarget(context),
+                      ),
+                    ),
                     onPressed: _currentIndex > 0
                         ? () => setState(() {
                               _currentIndex--;
@@ -173,9 +207,18 @@ class _ListeningExercisePageState extends State<ListeningExercisePage> {
                   ),
                   Text(
                     '${_currentIndex + 1} / ${_sentences.length}',
-                    style: TextStyle(color: Colors.grey.shade600),
+                    style: TextStyle(
+                      fontSize: Responsive.fontSizeBodySmall(context),
+                      color: Colors.grey.shade600,
+                    ),
                   ),
                   IconButton(
+                    style: IconButton.styleFrom(
+                      minimumSize: Size(
+                        Responsive.minTouchTarget(context),
+                        Responsive.minTouchTarget(context),
+                      ),
+                    ),
                     onPressed: _currentIndex < _sentences.length - 1
                         ? () => setState(() {
                               _currentIndex++;
@@ -187,6 +230,8 @@ class _ListeningExercisePageState extends State<ListeningExercisePage> {
                 ],
               ),
             ],
+              ),
+            ),
           ),
         ),
       ),

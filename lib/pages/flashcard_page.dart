@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../utils/responsive.dart';
 
 class FlashcardPage extends StatefulWidget {
   const FlashcardPage({super.key, this.words});
@@ -82,29 +83,39 @@ class _FlashcardPageState extends State<FlashcardPage> with SingleTickerProvider
       );
     }
     final w = _words[_index];
+    final pad = Responsive.horizontalPadding(context);
+
     return Scaffold(
       backgroundColor: AppTheme.surface,
       body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: AppTheme.buildAppBar(context, 'Kartlar'),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: Responsive.maxContentWidth(context),
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Text(
-                '${_index + 1} / ${_words.length}',
-                style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Expanded(
-              child: GestureDetector(
-                onTap: _flip,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: EdgeInsets.all(pad),
+                  child: AppTheme.buildAppBar(context, 'Kartlar'),
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: pad),
+                  child: Text(
+                    '${_index + 1} / ${_words.length}',
+                    style: TextStyle(
+                      fontSize: Responsive.fontSizeCaption(context),
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ),
+                SizedBox(height: Responsive.spacing(context) * 2),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: _flip,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: pad),
                   child: AnimatedBuilder(
                     animation: _animation,
                     builder: (context, child) {
@@ -115,11 +126,11 @@ class _FlashcardPageState extends State<FlashcardPage> with SingleTickerProvider
                           ..setEntry(3, 2, 0.001)
                           ..rotateY(3.14159 * _animation.value),
                         child: showFront
-                            ? _buildCard(w['word']!, true)
+                            ? _buildCard(context, w['word']!, true)
                             : Transform(
                                 alignment: Alignment.center,
                                 transform: Matrix4.identity()..rotateY(3.14159),
-                                child: _buildCard(w['meaning']!, false),
+                                child: _buildCard(context, w['meaning']!, false),
                               ),
                       );
                     },
@@ -127,53 +138,64 @@ class _FlashcardPageState extends State<FlashcardPage> with SingleTickerProvider
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  IconButton.filled(
-                    onPressed: _index > 0 ? _prev : null,
-                    icon: const Icon(Icons.arrow_back),
-                    style: IconButton.styleFrom(
-                      backgroundColor: AppTheme.primary,
-                      foregroundColor: Colors.white,
-                    ),
+                Padding(
+                  padding: EdgeInsets.all(pad),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      IconButton.filled(
+                        onPressed: _index > 0 ? _prev : null,
+                        icon: Icon(Icons.arrow_back, size: Responsive.iconSizeMedium(context)),
+                        style: IconButton.styleFrom(
+                          backgroundColor: AppTheme.primary,
+                          foregroundColor: Colors.white,
+                          minimumSize: Size(Responsive.minTouchTarget(context), Responsive.minTouchTarget(context)),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: _flip,
+                        child: Text(
+                          'Çevir',
+                          style: TextStyle(fontSize: Responsive.fontSizeButton(context)),
+                        ),
+                      ),
+                      IconButton.filled(
+                        onPressed: _next,
+                        icon: Icon(
+                          _index < _words.length - 1 ? Icons.arrow_forward : Icons.check,
+                          size: Responsive.iconSizeMedium(context),
+                        ),
+                        style: IconButton.styleFrom(
+                          backgroundColor: AppTheme.primary,
+                          foregroundColor: Colors.white,
+                          minimumSize: Size(Responsive.minTouchTarget(context), Responsive.minTouchTarget(context)),
+                        ),
+                      ),
+                    ],
                   ),
-                  TextButton(
-                    onPressed: _flip,
-                    child: const Text('Çevir'),
-                  ),
-                  IconButton.filled(
-                    onPressed: _next,
-                    icon: Icon(_index < _words.length - 1 ? Icons.arrow_forward : Icons.check),
-                    style: IconButton.styleFrom(
-                      backgroundColor: AppTheme.primary,
-                      foregroundColor: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildCard(String text, bool isFront) {
+  Widget _buildCard(BuildContext context, String text, bool isFront) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(32),
+      padding: EdgeInsets.all(Responsive.cardPadding(context) * 1.5),
       decoration: AppTheme.cardDecoration.copyWith(
         color: isFront ? Colors.white : AppTheme.primaryLight.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
       ),
       alignment: Alignment.center,
       child: Text(
         text,
         textAlign: TextAlign.center,
         style: TextStyle(
-          fontSize: 28,
+          fontSize: Responsive.fontSizeDisplay(context),
           fontWeight: FontWeight.bold,
           color: isFront ? AppTheme.primary : Colors.grey.shade800,
         ),

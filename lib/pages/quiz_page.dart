@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import '../theme/app_theme.dart';
+import '../utils/responsive.dart';
 
 class QuizPage extends StatefulWidget {
   const QuizPage({super.key, this.category = 'Words'});
@@ -101,51 +102,65 @@ class _QuizPageState extends State<QuizPage> {
     final options = q['options'] as List<String>;
     final correctIndex = q['correct'] as int;
     final showFeedback = _answered && _selectedChoice != null;
+    final pad = Responsive.horizontalPadding(context);
+    final spacing = Responsive.spacing(context);
+
     return Scaffold(
       backgroundColor: AppTheme.surface,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AppTheme.buildAppBar(context, 'Quiz'),
-              const SizedBox(height: 24),
-              LinearProgressIndicator(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: Responsive.maxContentWidth(context),
+            ),
+            child: Padding(
+              padding: EdgeInsets.all(pad),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AppTheme.buildAppBar(context, 'Quiz'),
+                  SizedBox(height: spacing * 2),
+                  LinearProgressIndicator(
                 value: (_currentIndex + 1) / _questions.length,
                 backgroundColor: AppTheme.primaryLight.withOpacity(0.3),
                 valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primary),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: spacing),
               Text(
                 '${_currentIndex + 1} / ${_questions.length}',
-                style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                style: TextStyle(
+                  fontSize: Responsive.fontSizeCaption(context),
+                  color: Colors.grey.shade600,
+                ),
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: spacing * 3),
               Center(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: Responsive.cardPadding(context) * 1.5,
+                    vertical: Responsive.cardPadding(context),
+                  ),
                   decoration: AppTheme.cardDecoration,
                   child: Text(
                     q['word'] as String,
-                    style: const TextStyle(
-                      fontSize: 32,
+                    style: TextStyle(
+                      fontSize: Responsive.fontSizeDisplay(context),
                       fontWeight: FontWeight.bold,
                       color: AppTheme.primary,
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
-              const Text(
+              SizedBox(height: spacing * 2),
+              Text(
                 'Doğru anlamı seç:',
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: Responsive.fontSizeBody(context),
                   fontWeight: FontWeight.w600,
                   color: AppTheme.primary,
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: spacing),
               ...List.generate(options.length, (i) {
                 final isSelected = _selectedChoice == i;
                 final isCorrect = i == correctIndex;
@@ -155,17 +170,17 @@ class _QuizPageState extends State<QuizPage> {
                   else if (isSelected && !isCorrect) bgColor = Colors.red.shade50;
                 }
                 return Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
+                  padding: EdgeInsets.only(bottom: spacing),
                   child: Material(
                     color: bgColor ?? Colors.white,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
                     child: InkWell(
                       onTap: _answered ? null : () => _onSelect(i),
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
                       child: Container(
-                        padding: const EdgeInsets.all(18),
+                        padding: EdgeInsets.all(Responsive.cardPadding(context)),
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
                           border: Border.all(
                             color: showFeedback && isCorrect
                                 ? Colors.green
@@ -179,16 +194,17 @@ class _QuizPageState extends State<QuizPage> {
                               showFeedback && isCorrect
                                   ? Icons.check_circle
                                   : (showFeedback && isSelected && !isCorrect ? Icons.cancel : (isSelected ? Icons.radio_button_checked : Icons.radio_button_off)),
+                              size: Responsive.iconSizeSmall(context),
                               color: showFeedback && isCorrect
                                   ? Colors.green
                                   : (showFeedback && isSelected && !isCorrect ? Colors.red : AppTheme.primary),
                             ),
-                            const SizedBox(width: 12),
+                            SizedBox(width: Responsive.spacing(context)),
                             Expanded(
                               child: Text(
                                 options[i],
-                                style: const TextStyle(
-                                  fontSize: 16,
+                                style: TextStyle(
+                                  fontSize: Responsive.fontSizeBody(context),
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -208,9 +224,12 @@ class _QuizPageState extends State<QuizPage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primary,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    padding: EdgeInsets.symmetric(
+                      vertical: Responsive.buttonPaddingVertical(context),
+                    ),
+                    minimumSize: Size(0, Responsive.minTouchTarget(context)),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
                     ),
                   ),
                   child: Text(
@@ -219,6 +238,8 @@ class _QuizPageState extends State<QuizPage> {
                 ),
               ),
             ],
+              ),
+            ),
           ),
         ),
       ),

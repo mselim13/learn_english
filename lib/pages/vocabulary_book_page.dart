@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'word_detail_page.dart';
 import 'flashcard_page.dart';
 import '../theme/app_theme.dart';
+import '../utils/responsive.dart';
 
 class VocabularyBookPage extends StatefulWidget {
   const VocabularyBookPage({super.key});
@@ -47,76 +48,83 @@ class _VocabularyBookPageState extends State<VocabularyBookPage> {
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(ctx).viewInsets.bottom,
         ),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+        child: Builder(
+          builder: (ctx) {
+            final r = Responsive.horizontalPadding(ctx);
+            return Container(
+              padding: EdgeInsets.all(r),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(Responsive.cardRadius(ctx)),
                 ),
               ),
-              const SizedBox(height: 24),
-              const Text(
-                'Yeni kelime ekle',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.primary,
-                ),
-              ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: wordController,
-                decoration: InputDecoration(
-                  labelText: 'Kelime (İngilizce)',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: meaningController,
-                decoration: InputDecoration(
-                  labelText: 'Anlam (Türkçe)',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Row(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppTheme.primary,
-                        side: const BorderSide(color: AppTheme.primary),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                  Center(
+                    child: Container(
+                      width: Responsive.handleWidth(ctx),
+                      height: Responsive.handleHeight(ctx),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(2),
                       ),
-                      child: const Text('İptal'),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
+                  SizedBox(height: Responsive.gapLg(ctx)),
+                  Text(
+                    'Yeni kelime ekle',
+                    style: TextStyle(
+                      fontSize: Responsive.fontSizeTitle(ctx),
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primary,
+                    ),
+                  ),
+                  SizedBox(height: Responsive.gapMd(ctx)),
+                  TextField(
+                    controller: wordController,
+                    decoration: InputDecoration(
+                      labelText: 'Kelime (İngilizce)',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(Responsive.cardRadius(ctx) * 0.6),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: Responsive.gapSm(ctx)),
+                  TextField(
+                    controller: meaningController,
+                    decoration: InputDecoration(
+                      labelText: 'Anlam (Türkçe)',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(Responsive.cardRadius(ctx) * 0.6),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: Responsive.gapLg(ctx)),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppTheme.primary,
+                            side: const BorderSide(color: AppTheme.primary),
+                            padding: EdgeInsets.symmetric(
+                              vertical: Responsive.buttonPaddingVertical(ctx),
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(Responsive.cardRadius(ctx) * 0.6),
+                            ),
+                          ),
+                          child: const Text('İptal'),
+                        ),
+                      ),
+                      SizedBox(width: Responsive.gapSm(ctx)),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
                         final word = wordController.text.trim();
                         final meaning = meaningController.text.trim();
                         if (word.isEmpty || meaning.isEmpty) {
@@ -136,22 +144,26 @@ class _VocabularyBookPageState extends State<VocabularyBookPage> {
                             'example': '',
                           });
                         });
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primary,
+                            foregroundColor: Colors.white,
+                            padding: EdgeInsets.symmetric(
+                              vertical: Responsive.buttonPaddingVertical(ctx),
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(Responsive.cardRadius(ctx) * 0.6),
+                            ),
+                          ),
+                          child: const Text('Ekle'),
                         ),
                       ),
-                      child: const Text('Ekle'),
-                    ),
+                    ],
                   ),
                 ],
               ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
@@ -172,14 +184,17 @@ class _VocabularyBookPageState extends State<VocabularyBookPage> {
           children: [
             // Header Bölümü
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+              padding: EdgeInsets.fromLTRB(
+                Responsive.horizontalPadding(context), 20,
+                Responsive.horizontalPadding(context), 10,
+              ),
               child: Row(
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'Kelime defteri',
                       style: TextStyle(
-                        fontSize: 24,
+                        fontSize: Responsive.fontSizeTitle(context),
                         fontWeight: FontWeight.bold,
                         color: AppTheme.primary,
                       ),
@@ -204,7 +219,10 @@ class _VocabularyBookPageState extends State<VocabularyBookPage> {
 
             // Arama Çubuğu
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              padding: EdgeInsets.symmetric(
+                horizontal: Responsive.horizontalPadding(context),
+                vertical: 8,
+              ),
               child: Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -237,7 +255,10 @@ class _VocabularyBookPageState extends State<VocabularyBookPage> {
 
             // Kelime Sayısı Bilgisi
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              padding: EdgeInsets.symmetric(
+                horizontal: Responsive.horizontalPadding(context),
+                vertical: 8,
+              ),
               child: Text(
                 _searchQuery.isEmpty
                     ? '${_saved.length} kelime kaydedildi'
@@ -265,12 +286,12 @@ class _VocabularyBookPageState extends State<VocabularyBookPage> {
                 ),
               )
                   : ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: EdgeInsets.symmetric(horizontal: Responsive.horizontalPadding(context)),
                 itemCount: _filteredWords.length,
                 itemBuilder: (context, i) {
                   final w = _filteredWords[i];
                   return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
+                    padding: EdgeInsets.only(bottom: Responsive.gapSm(context)),
                     child: InkWell(
                       onTap: () => Navigator.push(
                         context,
@@ -283,7 +304,7 @@ class _VocabularyBookPageState extends State<VocabularyBookPage> {
                         ),
                       ),
                       child: Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: EdgeInsets.all(Responsive.cardPadding(context)),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(16),
@@ -298,7 +319,7 @@ class _VocabularyBookPageState extends State<VocabularyBookPage> {
                         child: Row(
                           children: [
                             CircleAvatar(
-                              radius: 22,
+                              radius: Responsive.iconSizeSmall(context),
                               backgroundColor: AppTheme.primaryLight.withOpacity(0.2),
                               child: Text(
                                 w['word']![0].toUpperCase(),
@@ -308,15 +329,15 @@ class _VocabularyBookPageState extends State<VocabularyBookPage> {
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 16),
+                            SizedBox(width: Responsive.gapMd(context)),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     w['word']!,
-                                    style: const TextStyle(
-                                      fontSize: 16,
+                                    style: TextStyle(
+                                      fontSize: Responsive.fontSizeBody(context),
                                       fontWeight: FontWeight.bold,
                                       color: AppTheme.primary,
                                     ),
@@ -325,7 +346,7 @@ class _VocabularyBookPageState extends State<VocabularyBookPage> {
                                   Text(
                                     w['meaning']!,
                                     style: TextStyle(
-                                      fontSize: 14,
+                                      fontSize: Responsive.fontSizeBodySmall(context),
                                       color: Colors.grey.shade600,
                                     ),
                                   ),

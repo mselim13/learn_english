@@ -1,10 +1,27 @@
 import 'package:flutter/material.dart';
 import 'after_register_page.dart';
+import '../services/app_prefs.dart';
+import '../services/profile_notifier.dart';
 
-
-
-class RegisterPage extends StatelessWidget {
+class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
+
+  @override
+  State<RegisterPage> createState() => _RegisterPageState();
+}
+
+class _RegisterPageState extends State<RegisterPage> {
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,24 +79,78 @@ class RegisterPage extends StatelessWidget {
 
                   const Text("Ad Soyad"),
                   const SizedBox(height: 8),
-                  _inputField("örn. Nihan Karaca"),
+                  TextField(
+                    controller: _nameController,
+                    decoration: InputDecoration(
+                      hintText: "örn. Nihan Karaca",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                    ),
+                  ),
 
                   const SizedBox(height: 20),
 
                   const Text("E-Posta"),
                   const SizedBox(height: 8),
-                  _inputField("örn. nihan@gmail.com"),
+                  TextField(
+                    controller: _emailController,
+                    decoration: InputDecoration(
+                      hintText: "örn. nihan@gmail.com",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                    ),
+                  ),
 
                   const SizedBox(height: 20),
 
                   const Text("Parola"),
                   const SizedBox(height: 8),
-                  _inputField("************", isPassword: true),
+                  TextField(
+                    controller: _passwordController,
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      hintText: "************",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                    ),
+                  ),
 
                   const SizedBox(height: 30),
 
                   GestureDetector(
-                    onTap: () {
+                    onTap: () async {
+                      final name = _nameController.text.trim();
+                      final email = _emailController.text.trim();
+                      final password = _passwordController.text;
+                      if (name.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Lütfen Ad Soyad girin.')),
+                        );
+                        return;
+                      }
+                      if (email.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Lütfen e-posta adresinizi girin.')),
+                        );
+                        return;
+                      }
+                      if (password.length < 6) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Parola en az 6 karakter olmalıdır.'),
+                            duration: Duration(seconds: 3),
+                          ),
+                        );
+                        return;
+                      }
+                      await AppPrefs.setUserName(name);
+                      await AppPrefs.setUserEmail(email);
+                      await AppPrefs.setLoggedIn(true);
+                      updateProfileNotifier(ProfileData(name: name, level: 'A2', email: email));
+                      if (!mounted) return;
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
@@ -135,19 +206,6 @@ class RegisterPage extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  static Widget _inputField(String hint,
-      {bool isPassword = false}) {
-    return TextField(
-      obscureText: isPassword,
-      decoration: InputDecoration(
-        hintText: hint,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
-        ),
       ),
     );
   }
