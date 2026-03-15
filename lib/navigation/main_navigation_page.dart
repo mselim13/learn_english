@@ -5,7 +5,7 @@ import '../pages/vocabulary_book_page.dart';
 import '../pages/stats_page.dart';
 import '../pages/profile_page.dart';
 import '../pages/welcome_page.dart';
-import '../services/app_prefs.dart';
+import '../services/auth_service.dart';
 import '../utils/responsive.dart';
 
 class MainNavigationPage extends StatefulWidget {
@@ -25,10 +25,10 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
   }
 
   Future<void> _checkAuth() async {
-    final authenticated = await AppPrefs.isAuthenticated();
+    final authenticated = await AuthService.isAuthenticated();
     if (!mounted) return;
     if (!authenticated) {
-      await AppPrefs.setLoggedIn(false);
+      await AuthService.logout();
       if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const WelcomePage()),

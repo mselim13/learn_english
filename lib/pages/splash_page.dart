@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/app_prefs.dart';
+import '../services/auth_service.dart';
 import 'onboarding_page.dart';
 import 'welcome_page.dart';
 import 'login_page.dart';
@@ -23,10 +24,10 @@ class _SplashPageState extends State<SplashPage> {
     await Future.delayed(const Duration(milliseconds: 1800));
     if (!mounted) return;
     final seen = await AppPrefs.getOnboardingSeen();
-    final authenticated = await AppPrefs.isAuthenticated();
+    final authenticated = await AuthService.isAuthenticated();
     if (!mounted) return;
     if (!authenticated) {
-      await AppPrefs.setLoggedIn(false);
+      await AuthService.logout();
     }
     if (!seen) {
       Navigator.pushReplacement(

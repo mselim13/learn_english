@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'after_register_page.dart';
-import '../services/app_prefs.dart';
-import '../services/profile_notifier.dart';
+import '../services/auth_service.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -122,34 +121,34 @@ class _RegisterPageState extends State<RegisterPage> {
 
                   GestureDetector(
                     onTap: () async {
-                      final name = _nameController.text.trim();
-                      final email = _emailController.text.trim();
-                      final password = _passwordController.text;
-                      if (name.isEmpty) {
+                      final result = await AuthService.registerWithEmail(
+                        name: _nameController.text,
+                        email: _emailController.text,
+                        password: _passwordController.text,
+                      );
+
+                      if (!result.success) {
+                        if (!mounted) return;
+                        String message;
+                        switch (result.error) {
+                          case RegisterError.emptyName:
+                            message = 'Lütfen Ad Soyad girin.';
+                            break;
+                          case RegisterError.emptyEmail:
+                            message = 'Lütfen e-posta adresinizi girin.';
+                            break;
+                          case RegisterError.weakPassword:
+                            message = 'Parola en az 6 karakter olmalıdır.';
+                            break;
+                          default:
+                            message = 'Kayıt işlemi tamamlanamadı.';
+                        }
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Lütfen Ad Soyad girin.')),
+                          SnackBar(content: Text(message)),
                         );
                         return;
                       }
-                      if (email.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Lütfen e-posta adresinizi girin.')),
-                        );
-                        return;
-                      }
-                      if (password.length < 6) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Parola en az 6 karakter olmalıdır.'),
-                            duration: Duration(seconds: 3),
-                          ),
-                        );
-                        return;
-                      }
-                      await AppPrefs.setUserName(name);
-                      await AppPrefs.setUserEmail(email);
-                      await AppPrefs.setLoggedIn(true);
-                      updateProfileNotifier(ProfileData(name: name, level: 'A2', email: email));
+
                       if (!mounted) return;
                       Navigator.pushReplacement(
                         context,

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import '../utils/responsive.dart';
 import '../services/profile_notifier.dart';
@@ -107,10 +109,19 @@ class HomePage extends StatelessWidget {
                       color: Color(0xFFD1BEEB),
                       shape: BoxShape.circle,
                     ),
-                    child: CircleAvatar(
-                      radius: avatarRadius,
-                      backgroundColor: Colors.white,
-                      backgroundImage: const AssetImage("assets/images/panda_avatar.png"),
+                    child: ValueListenableBuilder<ProfileData?>(
+                      valueListenable: profileNotifier,
+                      builder: (context, data, _) {
+                        final hasAvatar = data?.hasAvatar ?? false;
+                        final ImageProvider image = hasAvatar
+                            ? FileImage(File(data!.avatarPath!))
+                            : const AssetImage("assets/images/panda_avatar.png");
+                        return CircleAvatar(
+                          radius: avatarRadius,
+                          backgroundColor: Colors.white,
+                          backgroundImage: image,
+                        );
+                      },
                     ),
                   ),
                 ),

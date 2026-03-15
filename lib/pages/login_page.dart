@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:learn_english/navigation/main_navigation_page.dart';
 import 'package:learn_english/services/app_prefs.dart';
-import 'package:learn_english/services/profile_notifier.dart';
+import 'package:learn_english/services/auth_service.dart';
 import 'forgot_password_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -129,50 +129,38 @@ class _LoginPageState extends State<LoginPage> {
                   /// Giriş Butonu
                   GestureDetector(
                     onTap: () async {
-                      final enteredEmail = _emailController.text.trim();
-                      if (enteredEmail.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Lütfen e-posta adresinizi girin.')),
-                        );
-                        return;
-                      }
-                      final registeredEmail = await AppPrefs.getUserEmail();
-                      if (registeredEmail == null || registeredEmail.isEmpty) {
+                      final result = await AuthService.loginWithEmail(
+                        email: _emailController.text,
+                        rememberMe: _rememberMe,
+                      );
+
+                      if (!result.success) {
                         if (!mounted) return;
+                        String message;
+                        switch (result.error) {
+                          case LoginError.emptyEmail:
+                            message = 'Lütfen e-posta adresinizi girin.';
+                            break;
+                          case LoginError.noRegisteredUser:
+                            message = 'Kayıtlı hesap bulunamadı. Lütfen önce \"Hesap Oluştur\" ile kayıt olun.';
+                            break;
+                          case LoginError.emailNotMatch:
+                            message = 'Bu e-posta adresi ile kayıtlı hesap bulunamadı.';
+                            break;
+                          default:
+                            message = 'Giriş yapılamadı.';
+                        }
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Kayıtlı hesap bulunamadı. Lütfen önce "Hesap Oluştur" ile kayıt olun.'),
-                            duration: Duration(seconds: 4),
-                          ),
+                          SnackBar(content: Text(message)),
                         );
                         return;
                       }
-                      if (enteredEmail.toLowerCase() != registeredEmail.toLowerCase()) {
-                        if (!mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Bu e-posta adresi ile kayıtlı hesap bulunamadı.'),
-                            duration: Duration(seconds: 3),
-                          ),
-                        );
-                        return;
-                      }
-                      await AppPrefs.setLoggedIn(true);
-                      final data = await loadProfileFromPrefs();
-                      updateProfileNotifier(data);
-                      if (_rememberMe) {
-                        await AppPrefs.setRememberMe(true);
-                        await AppPrefs.setSavedEmail(enteredEmail.isEmpty ? null : enteredEmail);
-                      } else {
-                        await AppPrefs.setRememberMe(false);
-                        await AppPrefs.setSavedEmail(null);
-                      }
+
                       if (!mounted) return;
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
-                          builder: (_) =>
-                          const MainNavigationPage(),
+                          builder: (_) => const MainNavigationPage(),
                         ),
                       );
                     },

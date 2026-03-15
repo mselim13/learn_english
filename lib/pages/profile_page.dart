@@ -1,6 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_cropper/image_cropper.dart';
+import 'package:image_picker/image_picker.dart';
 import '../utils/responsive.dart';
-import '../services/app_prefs.dart';
+import '../services/auth_service.dart';
 import '../services/profile_notifier.dart';
 import 'settings_page.dart';
 import 'edit_profile_page.dart';
@@ -159,37 +163,49 @@ class ProfilePage extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Stack(
-            children: [
-              CircleAvatar(
-                radius: Responsive.avatarSize(context) / 2,
-                backgroundColor: _primaryLight,
-                child: Icon(
-                  Icons.person,
-                  color: Colors.white.withOpacity(0.9),
-                  size: Responsive.avatarSize(context),
-                ),
-              ),
-              Positioned(
-                right: 0,
-                bottom: 0,
-                child: GestureDetector(
-                  onTap: () {},
-                  child: Container(
-                    padding: EdgeInsets.all(Responsive.gapSm(context)),
-                    decoration: const BoxDecoration(
-                      color: _primary,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.camera_alt,
-                      color: Colors.white,
-                      size: Responsive.iconSizeSmall(context),
+          ValueListenableBuilder<ProfileData?>(
+            valueListenable: profileNotifier,
+            builder: (context, data, _) {
+              final hasAvatar = data?.hasAvatar ?? false;
+              final ImageProvider? image = hasAvatar
+                  ? FileImage(File(data!.avatarPath!))
+                  : null;
+              return Stack(
+                children: [
+                  CircleAvatar(
+                    radius: Responsive.avatarSize(context) / 2,
+                    backgroundColor: _primaryLight,
+                    backgroundImage: image,
+                    child: image == null
+                        ? Icon(
+                            Icons.person,
+                            color: Colors.white.withOpacity(0.9),
+                            size: Responsive.avatarSize(context),
+                          )
+                        : null,
+                  ),
+                  Positioned(
+                    right: 0,
+                    bottom: 0,
+                    child: GestureDetector(
+                      onTap: () => _changeAvatar(context),
+                      child: Container(
+                        padding: EdgeInsets.all(Responsive.gapSm(context)),
+                        decoration: const BoxDecoration(
+                          color: _primary,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.camera_alt,
+                          color: Colors.white,
+                          size: Responsive.iconSizeSmall(context),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
-            ],
+                ],
+              );
+            },
           ),
           SizedBox(height: Responsive.gapMd(context)),
           ValueListenableBuilder<ProfileData?>(
@@ -471,8 +487,7 @@ class ProfilePage extends StatelessWidget {
         borderRadius: BorderRadius.circular(radius),
         child: InkWell(
           onTap: () async {
-            await AppPrefs.setLoggedIn(false);
-            profileNotifier.value = null;
+            await AuthService.logout();
             if (!context.mounted) return;
             Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(builder: (_) => const WelcomePage()),
@@ -516,5 +531,32 @@ class ProfilePage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _changeAvatar(BuildContext context) async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+    if (picked == null) return;
+
+    final cropper = ImageCropper();
+    final cropped = await cropper.cropImage(
+      sourcePath: picked.path,
+      uiSettings: [
+        AndroidUiSettings(
+          toolbarTitle: 'Profil fotoğrafını kırp',
+          toolbarColor: _primary,
+          toolbarWidgetColor: Colors.white,
+          hideBottomControls: false,
+          lockAspectRatio: true,
+        ),
+        IOSUiSettings(
+          title: 'Profil fotoğrafını kırp',
+          aspectRatioLockEnabled: true,
+        ),
+      ],
+    );
+
+    final path = cropped?.path ?? picked.path;
+    await AuthService.updateAvatar(path);
   }
 }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../services/app_prefs.dart';
-import '../services/profile_notifier.dart';
+import '../services/auth_service.dart';
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -46,10 +46,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
   Future<void> _saveProfile() async {
     final name = _nameController.text.trim().isEmpty ? null : _nameController.text.trim();
     final email = _emailController.text.trim().isEmpty ? null : _emailController.text.trim();
-    await AppPrefs.setUserName(name);
-    await AppPrefs.setUserEmail(email);
-    await AppPrefs.setUserLevel(_selectedLevel);
-    updateProfileNotifier(ProfileData(name: name, level: _selectedLevel, email: email));
+    await AuthService.updateProfile(
+      name: name,
+      email: email,
+      level: _selectedLevel,
+    );
     if (mounted) Navigator.pop(context);
   }
 

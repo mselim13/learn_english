@@ -9,6 +9,7 @@ class AppPrefs {
   static const _keyUserLevel = 'user_level';
   static const _keyUserEmail = 'user_email';
   static const _keyLoggedIn = 'logged_in';
+  static const _keyAvatarPath = 'avatar_path';
 
   static Future<SharedPreferences> get _prefs async =>
       await SharedPreferences.getInstance();
@@ -104,6 +105,20 @@ class AppPrefs {
     final p = await _prefs;
     await p.setBool(_keyLoggedIn, value);
   }
+
+   static Future<String?> getAvatarPath() async {
+     final p = await _prefs;
+     return p.getString(_keyAvatarPath);
+   }
+
+   static Future<void> setAvatarPath(String? value) async {
+     final p = await _prefs;
+     if (value == null || value.trim().isEmpty) {
+       await p.remove(_keyAvatarPath);
+     } else {
+       await p.setString(_keyAvatarPath, value);
+     }
+   }
 
   /// Gerçekten kayıtlı kullanıcı var mı (ad + e-posta kaydedilmiş)
   static Future<bool> hasRegisteredUser() async {
