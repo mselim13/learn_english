@@ -113,13 +113,20 @@ class HomePage extends StatelessWidget {
                       valueListenable: profileNotifier,
                       builder: (context, data, _) {
                         final hasAvatar = data?.hasAvatar ?? false;
-                        final ImageProvider image = hasAvatar
-                            ? FileImage(File(data!.avatarPath!))
-                            : const AssetImage("assets/images/panda_avatar.png");
                         return CircleAvatar(
+                          key: ValueKey(data?.avatarPath ?? 'no-avatar'),
                           radius: avatarRadius,
-                          backgroundColor: Colors.white,
-                          backgroundImage: image,
+                          backgroundColor: const Color(0xFFD1BEEB),
+                          backgroundImage: hasAvatar
+                              ? FileImage(File(data!.avatarPath!))
+                              : null,
+                          child: hasAvatar
+                              ? null
+                              : Icon(
+                                  Icons.person,
+                                  size: avatarRadius * 1.6,
+                                  color: Colors.white,
+                                ),
                         );
                       },
                     ),

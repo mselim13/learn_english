@@ -39,6 +39,9 @@ dependencies:
   share_plus: ^10.1.4
   image_picker: ^1.0.7
   image_cropper: ^8.0.1
+  path_provider: ^2.1.2
+  extended_image: ^8.2.1
+  image: ^4.1.7
 
 dev_dependencies:
   flutter_test:

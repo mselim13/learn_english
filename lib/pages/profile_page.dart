@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import '../utils/responsive.dart';
 import '../services/auth_service.dart';
 import '../services/profile_notifier.dart';
@@ -15,6 +16,7 @@ import 'badges_page.dart';
 import 'help_faq_page.dart';
 import 'translate_page.dart';
 import 'welcome_page.dart';
+import 'crop_photo.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -171,8 +173,10 @@ class ProfilePage extends StatelessWidget {
                   ? FileImage(File(data!.avatarPath!))
                   : null;
               return Stack(
+                key: ValueKey(data?.avatarPath ?? 'no-avatar'),
                 children: [
                   CircleAvatar(
+                    key: ValueKey(data?.avatarPath ?? 'no-avatar'),
                     radius: Responsive.avatarSize(context) / 2,
                     backgroundColor: _primaryLight,
                     backgroundImage: image,
@@ -534,29 +538,26 @@ class ProfilePage extends StatelessWidget {
   }
 
   Future<void> _changeAvatar(BuildContext context) async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery);
-    if (picked == null) return;
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(source: ImageSource.gallery);
+      if (picked == null) return;
 
-    final cropper = ImageCropper();
-    final cropped = await cropper.cropImage(
-      sourcePath: picked.path,
-      uiSettings: [
-        AndroidUiSettings(
-          toolbarTitle: 'Profil fotoğrafını kırp',
-          toolbarColor: _primary,
-          toolbarWidgetColor: Colors.white,
-          hideBottomControls: false,
-          lockAspectRatio: true,
+      final croppedPath = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => CropPhotoPage(imagePath: picked.path),
         ),
-        IOSUiSettings(
-          title: 'Profil fotoğrafını kırp',
-          aspectRatioLockEnabled: true,
-        ),
-      ],
-    );
+      );
 
-    final path = cropped?.path ?? picked.path;
-    await AuthService.updateAvatar(path);
+      if (croppedPath == null) return;
+
+      final sourceFile = File(croppedPath);
+      if (!await sourceFile.exists()) return;
+      await AuthService.updateAvatar(sourceFile.path);
+
+    } catch (e, st) {
+      debugPrint('Avatar seçme hatası: $e\n$st');
+    }
   }
 }
