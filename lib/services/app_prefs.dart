@@ -10,6 +10,7 @@ class AppPrefs {
   static const _keyUserEmail = 'user_email';
   static const _keyLoggedIn = 'logged_in';
   static const _keyAvatarPath = 'avatar_path';
+  static const _keyMembershipJoinedAtMs = 'membership_joined_at_ms';
 
   static Future<SharedPreferences> get _prefs async =>
       await SharedPreferences.getInstance();
@@ -119,6 +120,25 @@ class AppPrefs {
        await p.setString(_keyAvatarPath, value);
      }
    }
+
+  /// İlk kayıt / ilk giriş anı (milisaniye epoch).
+  static Future<int?> getMembershipJoinedAtMs() async {
+    final p = await _prefs;
+    final v = p.getInt(_keyMembershipJoinedAtMs);
+    return v;
+  }
+
+  static Future<void> setMembershipJoinedAtMs(int ms) async {
+    final p = await _prefs;
+    await p.setInt(_keyMembershipJoinedAtMs, ms);
+  }
+
+  /// Daha önce kayıtlı değilse bugünü üyelik başlangıcı olarak kaydeder.
+  static Future<void> ensureMembershipDateIfMissing() async {
+    final existing = await getMembershipJoinedAtMs();
+    if (existing != null) return;
+    await setMembershipJoinedAtMs(DateTime.now().millisecondsSinceEpoch);
+  }
 
   /// Gerçekten kayıtlı kullanıcı var mı (ad + e-posta kaydedilmiş)
   static Future<bool> hasRegisteredUser() async {

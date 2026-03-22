@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'word_detail_page.dart';
 import 'flashcard_page.dart';
+import '../services/vocabulary_book_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/responsive.dart';
 
@@ -14,16 +15,23 @@ class VocabularyBookPage extends StatefulWidget {
 
 class _VocabularyBookPageState extends State<VocabularyBookPage> {
   String _searchQuery = '';
-  final List<Map<String, String>> _saved = [
-    {'word': 'Hello', 'meaning': 'Merhaba', 'example': 'Hello, how are you?'},
-    {'word': 'Thank you', 'meaning': 'Teşekkürler', 'example': 'Thank you for your help.'},
-    {'word': 'Please', 'meaning': 'Lütfen', 'example': 'Please come in.'},
-    {'word': 'Goodbye', 'meaning': 'Hoşça kal', 'example': 'Goodbye!'},
-    {'word': 'Friend', 'meaning': 'Arkadaş', 'example': 'She is my friend.'},
-    {'word': 'Water', 'meaning': 'Su', 'example': 'Can I have water?'},
-    {'word': 'Understand', 'meaning': 'Anlamak', 'example': 'Do you understand?'},
-    {'word': 'Speak', 'meaning': 'Konuşmak', 'example': 'I speak English.'},
-  ];
+  List<Map<String, String>> _saved = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadWords();
+  }
+
+  Future<void> _loadWords() async {
+    final list = await VocabularyBookService.loadWords();
+    if (!mounted) return;
+    setState(() {
+      _saved = list;
+      _loading = false;
+    });
+  }
 
   // Filtrelenmiş listeyi getiren getter
   List<Map<String, String>> get _filteredWords {
@@ -137,13 +145,10 @@ class _VocabularyBookPageState extends State<VocabularyBookPage> {
                           return;
                         }
                         Navigator.pop(ctx);
-                        setState(() {
-                          _saved.add({
-                            'word': word,
-                            'meaning': meaning,
-                            'example': '',
-                          });
-                        });
+                        VocabularyBookService.addWord(
+                          word: word,
+                          meaning: meaning,
+                        ).then((_) => _loadWords());
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppTheme.primary,
@@ -179,7 +184,9 @@ class _VocabularyBookPageState extends State<VocabularyBookPage> {
         child: const Icon(Icons.add),
       ),
       body: SafeArea(
-        child: Column(
+        child: _loading
+            ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
+            : Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header Bölümü
@@ -293,16 +300,20 @@ class _VocabularyBookPageState extends State<VocabularyBookPage> {
                   return Padding(
                     padding: EdgeInsets.only(bottom: Responsive.gapSm(context)),
                     child: InkWell(
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => WordDetailPage(
-                            word: w['word']!,
-                            meaning: w['meaning']!,
-                            example: w['example']!,
+                      onTap: () async {
+                        final removed = await Navigator.push<bool>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => WordDetailPage(
+                              word: w['word']!,
+                              meaning: w['meaning']!,
+                              example: w['example'] ?? '',
+                              vocabularyEntryId: w['id'],
+                            ),
                           ),
-                        ),
-                      ),
+                        );
+                        if (removed == true && mounted) await _loadWords();
+                      },
                       child: Container(
                         padding: EdgeInsets.all(Responsive.cardPadding(context)),
                         decoration: BoxDecoration(
@@ -322,7 +333,8 @@ class _VocabularyBookPageState extends State<VocabularyBookPage> {
                               radius: Responsive.iconSizeSmall(context),
                               backgroundColor: AppTheme.primaryLight.withOpacity(0.2),
                               child: Text(
-                                w['word']![0].toUpperCase(),
+                                (w['word']!.isNotEmpty ? w['word']![0] : '?')
+                                    .toUpperCase(),
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: AppTheme.primary,

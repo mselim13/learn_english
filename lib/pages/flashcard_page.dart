@@ -19,13 +19,7 @@ class _FlashcardPageState extends State<FlashcardPage> with SingleTickerProvider
   @override
   void initState() {
     super.initState();
-    _words = widget.words ?? [
-      {'word': 'Hello', 'meaning': 'Merhaba'},
-      {'word': 'Thank you', 'meaning': 'Teşekkürler'},
-      {'word': 'Goodbye', 'meaning': 'Hoşça kal'},
-      {'word': 'Please', 'meaning': 'Lütfen'},
-      {'word': 'Friend', 'meaning': 'Arkadaş'},
-    ];
+    _words = widget.words ?? [];
     _controller = AnimationController(
       duration: const Duration(milliseconds: 400),
       vsync: this,

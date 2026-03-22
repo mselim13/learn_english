@@ -45,5 +45,9 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Konuşma pratiğinde söylediklerinizi metne çevirmek için ses tanıma kullanılır.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Konuşma pratiği için mikrofona erişim gerekir.</string>
 </dict>
 </plist>

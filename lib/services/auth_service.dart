@@ -74,6 +74,7 @@ class AuthService {
     }
 
     await AppPrefs.setLoggedIn(true);
+    await AppPrefs.ensureMembershipDateIfMissing();
 
     // Profil bilgisini notifier üzerinden tüm uygulamaya yay.
     final profile = await loadProfileFromPrefs();
@@ -113,6 +114,7 @@ class AuthService {
     await AppPrefs.setUserName(trimmedName);
     await AppPrefs.setUserEmail(trimmedEmail);
     await AppPrefs.setLoggedIn(true);
+    await AppPrefs.ensureMembershipDateIfMissing();
 
     updateProfileNotifier(
       ProfileData(name: trimmedName, level: 'A2', email: trimmedEmail),

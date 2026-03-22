@@ -28,6 +28,8 @@ class _SplashPageState extends State<SplashPage> {
     if (!mounted) return;
     if (!authenticated) {
       await AuthService.logout();
+    } else {
+      await AppPrefs.ensureMembershipDateIfMissing();
     }
     if (!seen) {
       Navigator.pushReplacement(

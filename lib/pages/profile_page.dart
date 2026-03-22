@@ -5,6 +5,8 @@ import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import '../utils/responsive.dart';
+import '../utils/turkish_date.dart';
+import '../services/app_prefs.dart';
 import '../services/auth_service.dart';
 import '../services/profile_notifier.dart';
 import 'settings_page.dart';
@@ -326,12 +328,21 @@ class ProfilePage extends StatelessWidget {
             },
           ),
           SizedBox(height: Responsive.gapSm(context)),
-          Text(
-            'Üyelik Tarihi: Kasım 2024',
-            style: TextStyle(
-              fontSize: Responsive.fontSizeCaption(context),
-              color: Colors.grey.shade600,
-            ),
+          FutureBuilder<int?>(
+            future: AppPrefs.getMembershipJoinedAtMs(),
+            builder: (context, snapshot) {
+              final ms = snapshot.data;
+              final label = ms == null
+                  ? 'Üyelik tarihi: —'
+                  : 'Üyelik Tarihi: ${formatMembershipDateTurkish(DateTime.fromMillisecondsSinceEpoch(ms))}';
+              return Text(
+                label,
+                style: TextStyle(
+                  fontSize: Responsive.fontSizeCaption(context),
+                  color: Colors.grey.shade600,
+                ),
+              );
+            },
           ),
         ],
       ),
