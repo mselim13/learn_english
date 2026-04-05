@@ -154,4 +154,5 @@ class AppPrefs {
     if (!loggedIn) return false;
     return hasRegisteredUser();
   }
+
 }

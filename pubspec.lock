@@ -400,6 +400,21 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.1.0"
+  llm_core:
+    dependency: transitive
+    description:
+      name: llm_core
+      sha256: d1b7fd04dff092d6cd041162c6fa26edb908aba4dbe97792a5880a2227117599
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.9"
+  llm_llamacpp:
+    dependency: "direct main"
+    description:
+      path: "third_party/llm_llamacpp"
+      relative: true
+    source: path
+    version: "0.1.9"
   logging:
     dependency: transitive
     description:

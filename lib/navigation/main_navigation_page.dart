@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../pages/home_page.dart';
-import '../pages/lesson_page.dart';
+import '../pages/ai_conversation_page.dart';
 import '../pages/vocabulary_book_page.dart';
 import '../pages/stats_page.dart';
 import '../pages/profile_page.dart';
@@ -39,7 +39,7 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
 
   final List<Widget> _pages = const [
     HomePage(),
-    LessonPage(),
+    AiConversationPage(),
     VocabularyBookPage(),
     StatsPage(),
     ProfilePage(),
@@ -72,7 +72,7 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
               trailing: SizedBox(height: Responsive.gapMd(context)),
               destinations: const [
                 NavigationRailDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: Text('Ana Sayfa')),
-                NavigationRailDestination(icon: Icon(Icons.school_outlined), selectedIcon: Icon(Icons.school), label: Text('Ders')),
+                NavigationRailDestination(icon: Icon(Icons.chat_bubble_outline), selectedIcon: Icon(Icons.chat_bubble), label: Text('İngilizce AI')),
                 NavigationRailDestination(icon: Icon(Icons.menu_book_outlined), selectedIcon: Icon(Icons.menu_book), label: Text('Kelime')),
                 NavigationRailDestination(icon: Icon(Icons.bar_chart_outlined), selectedIcon: Icon(Icons.bar_chart), label: Text('İstatistik')),
                 NavigationRailDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: Text('Profil')),
@@ -107,7 +107,7 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _buildNavItem(Icons.home, 0, navIconSize),
-              _buildNavItem(Icons.school_outlined, 1, navIconSize),
+              _buildNavItem(Icons.chat_bubble_outline, 1, navIconSize),
               _buildNavItem(Icons.menu_book_outlined, 2, navIconSize),
               _buildNavItem(Icons.bar_chart, 3, navIconSize),
               _buildNavItem(Icons.person, 4, navIconSize),

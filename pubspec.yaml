@@ -43,6 +43,8 @@ dependencies:
   extended_image: ^8.2.1
   image: ^4.1.7
   speech_to_text: ^7.3.0
+  llm_llamacpp:
+    path: third_party/llm_llamacpp
 
 dev_dependencies:
   flutter_test:
