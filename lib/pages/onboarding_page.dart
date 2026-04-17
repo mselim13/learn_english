@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/app_prefs.dart';
+import '../utils/responsive.dart';
+import '../widgets/responsive_page.dart';
 import 'welcome_page.dart';
 
 class OnboardingPage extends StatefulWidget {
@@ -42,6 +44,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
   @override
   Widget build(BuildContext context) {
+    final iconSize = Responsive.scaled(context, min: 56, max: 92);
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -53,32 +56,36 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 onPageChanged: (i) => setState(() => _page = i),
                 itemBuilder: (context, i) {
                   final p = _pages[i];
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                  return ResponsivePage(
+                    scroll: false,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: Responsive.horizontalPadding(context),
+                      vertical: 0,
+                    ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
                           p['icon'] as IconData,
-                          size: 80,
+                          size: iconSize,
                           color: const Color(0xFF7A3EC8),
                         ),
-                        const SizedBox(height: 32),
+                        SizedBox(height: Responsive.gapLg(context)),
                         Text(
                           p['title'] as String,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 24,
+                          style: TextStyle(
+                            fontSize: Responsive.fontSizeTitle(context),
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF4A148C),
+                            color: const Color(0xFF4A148C),
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: Responsive.gapMd(context)),
                         Text(
                           p['body'] as String,
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: Responsive.fontSizeBody(context),
                             height: 1.5,
                             color: Colors.grey.shade700,
                           ),
@@ -90,7 +97,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(Responsive.cardPadding(context)),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -99,7 +106,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     children: List.generate(
                       _pages.length,
                       (i) => Container(
-                        margin: const EdgeInsets.only(right: 6),
+                        margin: EdgeInsets.only(right: Responsive.gapXs(context)),
                         width: _page == i ? 24 : 8,
                         height: 8,
                         decoration: BoxDecoration(
@@ -116,9 +123,13 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF7A3EC8),
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: Responsive.scaled(context, min: 18, max: 28),
+                        vertical: Responsive.buttonPaddingVertical(context),
+                      ),
+                      minimumSize: Size(0, Responsive.minTouchTarget(context)),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(24),
+                        borderRadius: BorderRadius.circular(Responsive.cardRadius(context) + 6),
                       ),
                     ),
                     child: Text(_page < _pages.length - 1 ? 'İleri' : 'Başla'),

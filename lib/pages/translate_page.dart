@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../utils/responsive.dart';
+import '../widgets/responsive_page.dart';
 
 class TranslatePage extends StatefulWidget {
   const TranslatePage({super.key});
@@ -52,86 +54,84 @@ class _TranslatePageState extends State<TranslatePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.surface,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AppTheme.buildAppBar(context, 'Çeviri / Sözlük'),
-              const SizedBox(height: 16),
-              Text(
-                'Kelime veya kısa ifade yaz (İngilizce → Türkçe)',
-                style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
+      body: ResponsivePage(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AppTheme.buildAppBar(context, 'Çeviri / Sözlük'),
+            SizedBox(height: Responsive.gapSm(context)),
+            Text(
+              'Kelime veya kısa ifade yaz (İngilizce → Türkçe)',
+              style: TextStyle(fontSize: Responsive.fontSizeBodySmall(context), color: Colors.grey.shade700),
+            ),
+            SizedBox(height: Responsive.gapMd(context)),
+            TextField(
+              controller: _inputController,
+              maxLines: 2,
+              decoration: InputDecoration(
+                hintText: 'Örn: hello, thank you, good morning',
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
               ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: _inputController,
-                maxLines: 2,
-                decoration: InputDecoration(
-                  hintText: 'Örn: hello, thank you, good morning',
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            SizedBox(height: Responsive.gapMd(context)),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _loading ? null : _translate,
+                icon: _loading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.translate),
+                label: Text(_loading ? 'Aranıyor...' : 'Çevir'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primary,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(vertical: Responsive.buttonPaddingVertical(context)),
+                  minimumSize: Size(0, Responsive.minTouchTarget(context)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-              SizedBox(
+            ),
+            if (_result != null) ...[
+              SizedBox(height: Responsive.gapLg(context)),
+              Container(
                 width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: _loading ? null : _translate,
-                  icon: _loading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.translate),
-                  label: Text(_loading ? 'Aranıyor...' : 'Çevir'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                padding: EdgeInsets.all(Responsive.cardPadding(context)),
+                decoration: AppTheme.cardDecorationFor(context),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Sonuç',
+                      style: TextStyle(
+                        fontSize: Responsive.fontSizeCaption(context),
+                        color: Colors.grey.shade600,
+                      ),
                     ),
-                  ),
+                    SizedBox(height: Responsive.gapSm(context)),
+                    Text(
+                      _result!,
+                      style: TextStyle(
+                        fontSize: Responsive.fontSizeTitleSmall(context),
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primary,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              if (_result != null) ...[
-                const SizedBox(height: 24),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(24),
-                  decoration: AppTheme.cardDecoration,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Sonuç',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        _result!,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
             ],
-          ),
+          ],
         ),
       ),
     );

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../utils/responsive.dart';
+import '../widgets/responsive_page.dart';
+import '../services/study_session_tracker.dart';
+import '../services/stats_store.dart';
 
 class FlashcardPage extends StatefulWidget {
   const FlashcardPage({super.key, this.words});
@@ -19,6 +22,7 @@ class _FlashcardPageState extends State<FlashcardPage> with SingleTickerProvider
   @override
   void initState() {
     super.initState();
+    StudySessionTracker.start(activity: LearningActivity.flashcards);
     _words = widget.words ?? [];
     _controller = AnimationController(
       duration: const Duration(milliseconds: 400),
@@ -31,6 +35,7 @@ class _FlashcardPageState extends State<FlashcardPage> with SingleTickerProvider
 
   @override
   void dispose() {
+    StudySessionTracker.stop();
     _controller.dispose();
     super.dispose();
   }
@@ -64,15 +69,20 @@ class _FlashcardPageState extends State<FlashcardPage> with SingleTickerProvider
     if (_words.isEmpty) {
       return Scaffold(
         backgroundColor: AppTheme.surface,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          leading: IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back_ios, color: AppTheme.primary),
+        body: ResponsivePage(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AppTheme.buildAppBar(context, 'Kartlar'),
+              SizedBox(height: Responsive.gapLg(context)),
+              Center(
+                child: Text(
+                  'Gösterilecek kelime yok.',
+                  style: TextStyle(fontSize: Responsive.fontSizeBody(context)),
+                ),
+              ),
+            ],
           ),
-        ),
-        body: const Center(
-          child: Text('Gösterilecek kelime yok.'),
         ),
       );
     }
@@ -180,7 +190,7 @@ class _FlashcardPageState extends State<FlashcardPage> with SingleTickerProvider
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(Responsive.cardPadding(context) * 1.5),
-      decoration: AppTheme.cardDecoration.copyWith(
+      decoration: AppTheme.cardDecorationFor(context).copyWith(
         color: isFront ? Colors.white : AppTheme.primaryLight.withOpacity(0.3),
         borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
       ),

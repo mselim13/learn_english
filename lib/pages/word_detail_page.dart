@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import '../services/vocabulary_book_service.dart';
+import '../services/study_session_tracker.dart';
+import '../services/stats_store.dart';
 import '../theme/app_theme.dart';
+import '../utils/responsive.dart';
+import '../widgets/responsive_page.dart';
 
 class WordDetailPage extends StatefulWidget {
   const WordDetailPage({
@@ -31,11 +35,13 @@ class _WordDetailPageState extends State<WordDetailPage> {
   @override
   void initState() {
     super.initState();
+    StudySessionTracker.start(activity: LearningActivity.vocabulary);
     _tts.setLanguage('en-US');
   }
 
   @override
   void dispose() {
+    StudySessionTracker.stop();
     _tts.stop();
     super.dispose();
   }
@@ -106,24 +112,22 @@ class _WordDetailPageState extends State<WordDetailPage> {
 
     return Scaffold(
       backgroundColor: AppTheme.surface,
-      body: SafeArea(
+      body: ResponsivePage(
+        scroll: false,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: AppTheme.buildAppBar(context, 'Kelime'),
-            ),
+            AppTheme.buildAppBar(context, 'Kelime'),
+            SizedBox(height: Responsive.gapMd(context)),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.all(28),
-                      decoration: AppTheme.cardDecoration,
+                      padding: EdgeInsets.all(Responsive.cardPadding(context) * 1.2),
+                      decoration: AppTheme.cardDecorationFor(context),
                       child: Column(
                         children: [
                           Row(
@@ -132,8 +136,8 @@ class _WordDetailPageState extends State<WordDetailPage> {
                               Expanded(
                                 child: Text(
                                   widget.word,
-                                  style: const TextStyle(
-                                    fontSize: 28,
+                                  style: TextStyle(
+                                    fontSize: Responsive.fontSizeDisplay(context),
                                     fontWeight: FontWeight.bold,
                                     color: AppTheme.primary,
                                   ),
@@ -144,41 +148,41 @@ class _WordDetailPageState extends State<WordDetailPage> {
                                 icon: Icon(
                                   _speaking ? Icons.volume_up : Icons.volume_up,
                                   color: _speaking ? Colors.grey : AppTheme.primary,
-                                  size: 32,
+                                  size: Responsive.iconSizeMedium(context),
                                 ),
                                 tooltip: 'Telaffuz',
                               ),
                             ],
                           ),
-                          const SizedBox(height: 12),
+                          SizedBox(height: Responsive.gapSm(context)),
                           Text(
                             widget.meaning,
                             style: TextStyle(
-                              fontSize: 20,
+                              fontSize: Responsive.fontSizeTitleSmall(context),
                               color: Colors.grey.shade700,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    const Text(
+                    SizedBox(height: Responsive.gapLg(context)),
+                    Text(
                       'Örnek cümle',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: Responsive.fontSizeBody(context),
                         fontWeight: FontWeight.w600,
                         color: AppTheme.primary,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: Responsive.gapSm(context)),
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.all(20),
-                      decoration: AppTheme.cardDecoration,
+                      padding: EdgeInsets.all(Responsive.cardPadding(context)),
+                      decoration: AppTheme.cardDecorationFor(context),
                       child: Text(
                         exampleText,
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: Responsive.fontSizeBody(context),
                           fontStyle: widget.example.trim().isEmpty
                               ? FontStyle.normal
                               : FontStyle.italic,
@@ -186,7 +190,7 @@ class _WordDetailPageState extends State<WordDetailPage> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: Responsive.gapLg(context)),
                     if (fromVocab)
                       SizedBox(
                         width: double.infinity,
@@ -206,9 +210,10 @@ class _WordDetailPageState extends State<WordDetailPage> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppTheme.primary,
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            padding: EdgeInsets.symmetric(vertical: Responsive.buttonPaddingVertical(context)),
+                            minimumSize: Size(0, Responsive.minTouchTarget(context)),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
+                              borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
                             ),
                           ),
                         ),
@@ -232,14 +237,15 @@ class _WordDetailPageState extends State<WordDetailPage> {
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: AppTheme.primary,
                                 side: const BorderSide(color: AppTheme.primary),
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding: EdgeInsets.symmetric(vertical: Responsive.buttonPaddingVertical(context)),
+                                minimumSize: Size(0, Responsive.minTouchTarget(context)),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
                                 ),
                               ),
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          SizedBox(width: Responsive.gapSm(context)),
                           Expanded(
                             child: ElevatedButton.icon(
                               onPressed: _onLearned,
@@ -248,9 +254,10 @@ class _WordDetailPageState extends State<WordDetailPage> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppTheme.primary,
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding: EdgeInsets.symmetric(vertical: Responsive.buttonPaddingVertical(context)),
+                                minimumSize: Size(0, Responsive.minTouchTarget(context)),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
                                 ),
                               ),
                             ),

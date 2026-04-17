@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../utils/responsive.dart';
 import 'badges_page.dart';
+import '../services/stats_store.dart';
 
 enum _Period { daily, weekly, monthly }
 
@@ -14,32 +15,11 @@ class StatsPage extends StatefulWidget {
 class _StatsPageState extends State<StatsPage> {
   _Period _period = _Period.weekly;
 
-  // Günlük: son 7 gün
-  static const List<String> _days = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
-  static const List<double> _dailyHeights = [0.4, 0.5, 0.35, 0.6, 1.0, 0.45, 0.55];
-  // Haftalık: son 4 hafta
-  static const List<String> _weekLabels = ['1. Hafta', '2. Hafta', '3. Hafta', 'Bu Hafta'];
-  static const List<double> _weekHeights = [0.5, 0.8, 0.6, 1.0];
-  // Aylık: son 6 ay
-  static const List<String> _monthLabels = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Bu Ay'];
-  static const List<double> _monthHeights = [0.5, 0.7, 0.6, 0.9, 0.8, 1.0];
-  static const int _highlightIndexDaily = 6;
-  static const int _highlightIndexWeekly = 3;
-  static const int _highlightIndexMonthly = 5;
-
-  // Mock data
-  static const double _weeklyGoalHours = 5.0;
-  static const double _currentWeeklyHours = 3.75;
-  static const String _level = 'A2';
-  static const String _nextLevel = 'B1';
-  static const double _levelProgress = 0.6;
-  static const int _streakDays = 10;
-  static const Map<String, double> _skills = {
-    'Vocabulary': 0.8,
-    'Listening': 0.65,
-    'Speaking': 0.5,
-    'Writing': 0.45,
-  };
+  StatsPeriod _toStatsPeriod(_Period p) => switch (p) {
+        _Period.daily => StatsPeriod.daily,
+        _Period.weekly => StatsPeriod.weekly,
+        _Period.monthly => StatsPeriod.monthly,
+      };
 
   @override
   Widget build(BuildContext context) {
@@ -51,41 +31,50 @@ class _StatsPageState extends State<StatsPage> {
             constraints: BoxConstraints(
               maxWidth: Responsive.maxContentWidth(context),
             ),
-            child: SingleChildScrollView(
-              padding: EdgeInsets.symmetric(
-                horizontal: Responsive.horizontalPadding(context),
-                vertical: Responsive.verticalPadding(context),
-              ),
-              child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(context),
-              SizedBox(height: Responsive.gapMd(context)),
-              _buildBarChartCard(context),
-              SizedBox(height: Responsive.gapMd(context)),
-              _buildWeeklyGoalCard(),
-              SizedBox(height: Responsive.gapMd(context)),
-              _buildLevelProgressCard(),
-              SizedBox(height: Responsive.gapMd(context)),
-              IntrinsicHeight(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(child: _buildLearningTimeCard(context)),
-                    SizedBox(width: Responsive.gapSm(context)),
-                    Expanded(child: _buildSkillMasterCard(context)),
-                  ],
-                ),
-              ),
-              SizedBox(height: Responsive.gapMd(context)),
-              _buildStreakCard(context),
-              SizedBox(height: Responsive.gapMd(context)),
-              _buildWeeklySummaryCard(),
-              SizedBox(height: Responsive.gapMd(context)),
-              _buildBadgesSection(context),
-              SizedBox(height: Responsive.gapLg(context)),
-            ],
-              ),
+            child: FutureBuilder<StatsSnapshot>(
+              future: StatsStore.getSnapshot(_toStatsPeriod(_period)),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                final s = snapshot.data!;
+                return SingleChildScrollView(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: Responsive.horizontalPadding(context),
+                    vertical: Responsive.verticalPadding(context),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildHeader(context),
+                      SizedBox(height: Responsive.gapMd(context)),
+                      _buildBarChartCard(context, s),
+                      SizedBox(height: Responsive.gapMd(context)),
+                      _buildWeeklyGoalCard(context, s),
+                      SizedBox(height: Responsive.gapMd(context)),
+                      _buildLevelProgressCard(context, s),
+                      SizedBox(height: Responsive.gapMd(context)),
+                      IntrinsicHeight(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Expanded(child: _buildLearningTimeCard(context, s)),
+                            SizedBox(width: Responsive.gapSm(context)),
+                            Expanded(child: _buildSkillMasterCard(context, s)),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: Responsive.gapMd(context)),
+                      _buildStreakCard(context, s),
+                      SizedBox(height: Responsive.gapMd(context)),
+                      _buildWeeklySummaryCard(context, s),
+                      SizedBox(height: Responsive.gapMd(context)),
+                      _buildBadgesSection(context, s),
+                      SizedBox(height: Responsive.gapLg(context)),
+                    ],
+                  ),
+                );
+              },
             ),
           ),
         ),
@@ -97,17 +86,16 @@ class _StatsPageState extends State<StatsPage> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-
-        const SizedBox(width: 12),
-        const Expanded(
+        SizedBox(width: Responsive.gapSm(context)),
+        Expanded(
           child: Padding(
-            padding: EdgeInsets.only(top: 6),
+            padding: EdgeInsets.only(top: Responsive.gapXs(context)),
             child: Text(
               'Senin Özetin',
               style: TextStyle(
-                fontSize: 24,
+                fontSize: Responsive.fontSizeTitle(context),
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF4A148C),
+                color: const Color(0xFF4A148C),
               ),
             ),
           ),
@@ -128,45 +116,62 @@ class _StatsPageState extends State<StatsPage> {
         showModalBottomSheet(
           context: context,
           backgroundColor: Colors.transparent,
-          builder: (ctx) => Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            ),
+          builder: (ctx) => Align(
+            alignment: Alignment.bottomCenter,
             child: SafeArea(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(height: 12),
-                  Text(
-                    'Periyot seç',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey.shade800,
-                    ),
+              top: false,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: Responsive.maxContentWidth(ctx)),
+                child: Material(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(Responsive.cardRadius(ctx)),
                   ),
-                  const SizedBox(height: 8),
-                  ..._Period.values.map((p) => ListTile(
-                    title: Text(labels[p]!),
-                    selected: _period == p,
-                    onTap: () {
-                      setState(() => _period = p);
-                      Navigator.pop(ctx);
-                    },
-                  )),
-                  const SizedBox(height: 12),
-                ],
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(height: Responsive.gapSm(ctx)),
+                      Text(
+                        'Periyot seç',
+                        style: TextStyle(
+                          fontSize: Responsive.fontSizeBody(ctx),
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade800,
+                        ),
+                      ),
+                      SizedBox(height: Responsive.gapXs(ctx)),
+                      ..._Period.values.map(
+                        (p) => ListTile(
+                          dense: true,
+                          visualDensity: VisualDensity.compact,
+                          title: Text(
+                            labels[p]!,
+                            style: TextStyle(fontSize: Responsive.fontSizeBody(ctx)),
+                          ),
+                          selected: _period == p,
+                          onTap: () {
+                            setState(() => _period = p);
+                            Navigator.pop(ctx);
+                          },
+                        ),
+                      ),
+                      SizedBox(height: Responsive.gapSm(ctx)),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
         );
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: EdgeInsets.symmetric(
+          horizontal: Responsive.gapMd(context),
+          vertical: Responsive.gapSm(context) * 0.7,
+        ),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
           border: Border.all(color: const Color(0xFFD1BEEB)),
         ),
         child: Row(
@@ -174,26 +179,32 @@ class _StatsPageState extends State<StatsPage> {
           children: [
             Text(
               labels[_period]!,
-              style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF4A148C)),
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF4A148C),
+                fontSize: Responsive.fontSizeBodySmall(context),
+              ),
             ),
-            const SizedBox(width: 4),
-            Icon(Icons.keyboard_arrow_down, size: 20, color: Colors.grey.shade700),
+            SizedBox(width: Responsive.gapXs(context)),
+            Icon(Icons.keyboard_arrow_down, size: Responsive.iconSizeSmall(context), color: Colors.grey.shade700),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildWeeklyGoalCard() {
-    final progress = (_currentWeeklyHours / _weeklyGoalHours).clamp(0.0, 1.0);
-    final hoursStr = '${_currentWeeklyHours.toStringAsFixed(1)} saat';
-    final goalStr = '$_weeklyGoalHours saat';
+  Widget _buildWeeklyGoalCard(BuildContext context, StatsSnapshot s) {
+    final progress = s.weeklyGoalMinutes <= 0
+        ? 0.0
+        : (s.currentWeeklyMinutes / s.weeklyGoalMinutes).clamp(0.0, 1.0);
+    final hoursStr = _formatMinutes(s.currentWeeklyMinutes);
+    final goalStr = _formatMinutes(s.weeklyGoalMinutes);
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(18),
+      padding: EdgeInsets.all(Responsive.cardPadding(context)),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.06),
@@ -211,24 +222,24 @@ class _StatsPageState extends State<StatsPage> {
               Text(
                 'Bu hafta',
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: Responsive.fontSizeBodySmall(context),
                   color: Colors.grey.shade700,
                   fontWeight: FontWeight.w500,
                 ),
               ),
               Text(
                 '$hoursStr / $goalStr',
-                style: const TextStyle(
-                  fontSize: 14,
+                style: TextStyle(
+                  fontSize: Responsive.fontSizeBodySmall(context),
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF4A148C),
+                  color: const Color(0xFF4A148C),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: Responsive.gapSm(context)),
           ClipRRect(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(Responsive.cardRadius(context) * 0.5),
             child: LinearProgressIndicator(
               value: progress,
               minHeight: 10,
@@ -241,13 +252,13 @@ class _StatsPageState extends State<StatsPage> {
     );
   }
 
-  Widget _buildLevelProgressCard() {
+  Widget _buildLevelProgressCard(BuildContext context, StatsSnapshot s) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(18),
+      padding: EdgeInsets.all(Responsive.cardPadding(context)),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.06),
@@ -271,11 +282,11 @@ class _StatsPageState extends State<StatsPage> {
                 ),
               ),
               Text(
-                '$_level → $_nextLevel',
-                style: const TextStyle(
-                  fontSize: 16,
+                '${s.level} → ${s.nextLevel}',
+                style: TextStyle(
+                  fontSize: Responsive.fontSizeBody(context),
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF4A148C),
+                  color: const Color(0xFF4A148C),
                 ),
               ),
             ],
@@ -284,7 +295,7 @@ class _StatsPageState extends State<StatsPage> {
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: LinearProgressIndicator(
-              value: _levelProgress,
+              value: s.levelProgress,
               minHeight: 10,
               backgroundColor: const Color(0xFFD1BEEB).withOpacity(0.4),
               valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF7A3EC8)),
@@ -292,7 +303,7 @@ class _StatsPageState extends State<StatsPage> {
           ),
           const SizedBox(height: 6),
           Text(
-            '${(_levelProgress * 100).toInt()}% $_nextLevel seviyesine',
+            '${(s.levelProgress * 100).toInt()}% ${s.nextLevel} seviyesine',
             style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
           ),
         ],
@@ -300,15 +311,16 @@ class _StatsPageState extends State<StatsPage> {
     );
   }
 
-  Widget _buildBarChartCard(BuildContext context) {
+  Widget _buildBarChartCard(BuildContext context, StatsSnapshot s) {
     const double barAreaHeight = 160;
     const double maxBarHeight = 130;
-    final isDaily = _period == _Period.daily;
-    final isWeekly = _period == _Period.weekly;
-    final isMonthly = _period == _Period.monthly;
-    final labels = isDaily ? _days : (isWeekly ? _weekLabels : _monthLabels);
-    final heights = isDaily ? _dailyHeights : (isWeekly ? _weekHeights : _monthHeights);
-    final highlightIndex = isDaily ? _highlightIndexDaily : (isWeekly ? _highlightIndexWeekly : _highlightIndexMonthly);
+    final isDaily = s.period == StatsPeriod.daily;
+    final isWeekly = s.period == StatsPeriod.weekly;
+    final isMonthly = s.period == StatsPeriod.monthly;
+    final labels = s.seriesLabels;
+    final minutes = s.seriesMinutes;
+    final heights = s.seriesHeights;
+    final highlightIndex = s.highlightIndex;
     final showHighlight = true;
     final barWidth = isDaily ? 28.0 : (isWeekly ? 36.0 : 32.0);
     final labelWidth = isDaily ? 28.0 : (isWeekly ? 72.0 : 40.0);
@@ -346,7 +358,7 @@ class _StatsPageState extends State<StatsPage> {
                       Padding(
                         padding: const EdgeInsets.only(bottom: 4),
                         child: Text(
-                          isMonthly ? '8 sa' : (isWeekly ? '5 sa' : '4 sa'),
+                          _formatMinutes(minutes[i]),
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
@@ -394,7 +406,8 @@ class _StatsPageState extends State<StatsPage> {
     );
   }
 
-  Widget _buildLearningTimeCard(BuildContext context) {
+  Widget _buildLearningTimeCard(BuildContext context, StatsSnapshot s) {
+    final weekly = _formatMinutes(s.currentWeeklyMinutes);
     return GestureDetector(
       onTap: () => _showLearningTimeDetail(context),
       child: Container(
@@ -431,9 +444,9 @@ class _StatsPageState extends State<StatsPage> {
               ),
             ),
             const SizedBox(height: 6),
-            const Text(
-              '52 dk',
-              style: TextStyle(
+            Text(
+              weekly,
+              style: const TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
@@ -445,9 +458,9 @@ class _StatsPageState extends State<StatsPage> {
     );
   }
 
-  Widget _buildSkillMasterCard(BuildContext context) {
+  Widget _buildSkillMasterCard(BuildContext context, StatsSnapshot s) {
     return GestureDetector(
-      onTap: () => _showSkillMasterDetail(context),
+      onTap: () => _showSkillMasterDetail(context, skills: s.skills),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -476,7 +489,7 @@ class _StatsPageState extends State<StatsPage> {
               ),
             ),
             const SizedBox(height: 8),
-            ..._skills.entries.map((e) {
+            ...s.skills.entries.map((e) {
               final short = e.key == 'Vocabulary' ? 'Voca' : e.key == 'Listening' ? 'Listen' : e.key == 'Speaking' ? 'Speak' : 'Write';
               return Padding(
                 padding: const EdgeInsets.only(bottom: 6),
@@ -514,9 +527,9 @@ class _StatsPageState extends State<StatsPage> {
     );
   }
 
-  Widget _buildStreakCard(BuildContext context) {
+  Widget _buildStreakCard(BuildContext context, StatsSnapshot s) {
     return GestureDetector(
-      onTap: () => _showStreakDetail(context),
+      onTap: () => _showStreakDetail(context, streakDays: s.streakDays),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
@@ -535,7 +548,7 @@ class _StatsPageState extends State<StatsPage> {
           children: [
             Icon(Icons.local_fire_department, color: Colors.amber.shade700, size: 36),
             const SizedBox(width: 16),
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -549,7 +562,7 @@ class _StatsPageState extends State<StatsPage> {
                   ),
                   SizedBox(height: 4),
                   Text(
-                    '10 günlük seri!',
+                    '${s.streakDays} günlük seri!',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -566,7 +579,7 @@ class _StatsPageState extends State<StatsPage> {
     );
   }
 
-  Widget _buildWeeklySummaryCard() {
+  Widget _buildWeeklySummaryCard(BuildContext context, StatsSnapshot s) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
@@ -600,7 +613,7 @@ class _StatsPageState extends State<StatsPage> {
           ),
           const SizedBox(height: 12),
           Text(
-            'Bu hafta 5 gün çalıştın, toplam 3s 45dk. Geçen haftaya göre +2 saat.',
+            'Bu hafta toplam ${_formatMinutes(s.currentWeeklyMinutes)} çalıştın.',
             style: TextStyle(fontSize: 14, height: 1.4, color: Colors.grey.shade700),
           ),
         ],
@@ -608,12 +621,11 @@ class _StatsPageState extends State<StatsPage> {
     );
   }
 
-  Widget _buildBadgesSection(BuildContext context) {
+  Widget _buildBadgesSection(BuildContext context, StatsSnapshot s) {
     final badges = [
-      (Icons.local_fire_department, '7 gün', Colors.orange),
-      (Icons.library_books, 'İlk 50', Colors.green),
-      (Icons.headphones, 'Dinleyici', Colors.blue),
-      (Icons.mic, '"Hello.."', Colors.purple),
+      ('7_day_streak', Icons.local_fire_department, '7 gün', Colors.orange),
+      ('50_vocab', Icons.library_books, 'İlk 50', Colors.green),
+      ('1h_listening', Icons.headphones, 'Dinleyici', Colors.blue),
     ];
     return GestureDetector(
       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BadgesPage())),
@@ -633,7 +645,8 @@ class _StatsPageState extends State<StatsPage> {
           scrollDirection: Axis.horizontal,
           child: Row(
             children: badges.asMap().entries.map((e) {
-              final (icon, label, color) = e.value;
+              final (id, icon, label, color) = e.value;
+              final unlocked = s.badges[id] ?? false;
               return Container(
                 width: 90,
                 margin: EdgeInsets.only(right: e.key < badges.length - 1 ? 12 : 0),
@@ -651,7 +664,7 @@ class _StatsPageState extends State<StatsPage> {
                 ),
                 child: Column(
                   children: [
-                    Icon(icon, color: color, size: 32),
+                    Icon(icon, color: unlocked ? color : Colors.grey, size: 32),
                     const SizedBox(height: 8),
                     Text(
                       label,
@@ -659,7 +672,7 @@ class _StatsPageState extends State<StatsPage> {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: Colors.grey.shade800,
+                        color: unlocked ? Colors.grey.shade800 : Colors.grey.shade500,
                       ),
                     ),
                   ],
@@ -673,9 +686,9 @@ class _StatsPageState extends State<StatsPage> {
     );
   }
 
-  void _showStreakDetail(BuildContext context) {
+  void _showStreakDetail(BuildContext context, {required int streakDays}) {
     const int totalDays = 14;
-    final inactiveCount = totalDays - _streakDays;
+    final inactiveCount = totalDays - streakDays;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -725,7 +738,7 @@ class _StatsPageState extends State<StatsPage> {
               ),
               const SizedBox(height: 8),
               Text(
-                '$_streakDays gündür öğreniyorsun!',
+                '$streakDays gündür öğreniyorsun!',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
               ),
@@ -765,7 +778,7 @@ class _StatsPageState extends State<StatsPage> {
   }
 
   void _showLearningTimeDetail(BuildContext context) {
-    final dailyMinutes = [45, 30, 0, 60, 90, 20, 40];
+    const labels = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -775,9 +788,14 @@ class _StatsPageState extends State<StatsPage> {
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
+        child: FutureBuilder<List<int>>(
+          future: StatsStore.getDailyMinutesLast7(),
+          builder: (ctx, snap) {
+            final dailyMinutes = snap.data ?? List<int>.filled(7, 0);
+            final total = dailyMinutes.fold<int>(0, (a, b) => a + b);
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
             Container(
               width: 40,
               height: 4,
@@ -796,7 +814,7 @@ class _StatsPageState extends State<StatsPage> {
               ),
             ),
             const SizedBox(height: 8),
-            const Text('3 sa 45 dak toplam', style: TextStyle(color: Colors.grey)),
+            Text('${_formatMinutes(total)} toplam', style: const TextStyle(color: Colors.grey)),
             const SizedBox(height: 24),
             ...List.generate(7, (i) {
               final m = dailyMinutes[i];
@@ -806,7 +824,7 @@ class _StatsPageState extends State<StatsPage> {
                   children: [
                     SizedBox(
                       width: 40,
-                      child: Text(_days[i], style: TextStyle(color: Colors.grey.shade700)),
+                      child: Text(labels[i], style: TextStyle(color: Colors.grey.shade700)),
                     ),
                     Expanded(
                       child: LinearProgressIndicator(
@@ -822,13 +840,15 @@ class _StatsPageState extends State<StatsPage> {
                 ),
               );
             }),
-          ],
+              ],
+            );
+          },
         ),
       ),
     );
   }
 
-  void _showSkillMasterDetail(BuildContext context) {
+  void _showSkillMasterDetail(BuildContext context, {required Map<String, double> skills}) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -859,7 +879,7 @@ class _StatsPageState extends State<StatsPage> {
               ),
             ),
             const SizedBox(height: 24),
-            ..._skills.entries.map((e) => Padding(
+            ...skills.entries.map((e) => Padding(
               padding: const EdgeInsets.only(bottom: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -900,5 +920,13 @@ class _StatsPageState extends State<StatsPage> {
         ),
       ),
     );
+  }
+
+  String _formatMinutes(int minutes) {
+    if (minutes < 60) return '$minutes dk';
+    final h = minutes ~/ 60;
+    final m = minutes % 60;
+    if (m == 0) return '$h sa';
+    return '${h}sa ${m}dk';
   }
 }

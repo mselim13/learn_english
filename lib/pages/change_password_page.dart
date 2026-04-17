@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../utils/responsive.dart';
+import '../widgets/responsive_page.dart';
 
 class ChangePasswordPage extends StatefulWidget {
   const ChangePasswordPage({super.key});
@@ -56,69 +58,53 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.surface,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back_ios, color: AppTheme.primary),
-        ),
-        title: const Text(
-          'Şifre değiştir',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: AppTheme.primary,
-          ),
-        ),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildField('Mevcut parola', _currentController, _obscureCurrent, () => setState(() => _obscureCurrent = !_obscureCurrent)),
-              const SizedBox(height: 20),
-              _buildField('Yeni parola', _newController, _obscureNew, () => setState(() => _obscureNew = !_obscureNew)),
-              const SizedBox(height: 20),
-              _buildField('Yeni parola (tekrar)', _repeatController, _obscureRepeat, () => setState(() => _obscureRepeat = !_obscureRepeat)),
-              const SizedBox(height: 32),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _submit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
+      body: ResponsivePage(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AppTheme.buildAppBar(context, 'Şifre değiştir'),
+            SizedBox(height: Responsive.gapLg(context)),
+            _buildField(context, 'Mevcut parola', _currentController, _obscureCurrent, () => setState(() => _obscureCurrent = !_obscureCurrent)),
+            SizedBox(height: Responsive.gapMd(context)),
+            _buildField(context, 'Yeni parola', _newController, _obscureNew, () => setState(() => _obscureNew = !_obscureNew)),
+            SizedBox(height: Responsive.gapMd(context)),
+            _buildField(context, 'Yeni parola (tekrar)', _repeatController, _obscureRepeat, () => setState(() => _obscureRepeat = !_obscureRepeat)),
+            SizedBox(height: Responsive.gapLg(context)),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _submit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primary,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(vertical: Responsive.buttonPaddingVertical(context)),
+                  minimumSize: Size(0, Responsive.minTouchTarget(context)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
                   ),
-                  child: const Text('Kaydet'),
                 ),
+                child: Text('Kaydet', style: TextStyle(fontSize: Responsive.fontSizeButton(context))),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildField(String label, TextEditingController c, bool obscure, VoidCallback toggle) {
+  Widget _buildField(BuildContext context, String label, TextEditingController c, bool obscure, VoidCallback toggle) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 14,
+          style: TextStyle(
+            fontSize: Responsive.fontSizeBodySmall(context),
             fontWeight: FontWeight.w600,
             color: AppTheme.primary,
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: Responsive.gapXs(context)),
         TextField(
           controller: c,
           obscureText: obscure,
@@ -126,7 +112,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
             filled: true,
             fillColor: Colors.white,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
               borderSide: BorderSide(color: Colors.grey.shade300),
             ),
             suffixIcon: IconButton(

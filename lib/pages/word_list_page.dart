@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'word_detail_page.dart';
 import 'flashcard_page.dart';
 import '../theme/app_theme.dart';
+import '../utils/responsive.dart';
+import '../widgets/responsive_page.dart';
+import '../services/study_session_tracker.dart';
+import '../services/stats_store.dart';
 
 class WordListPage extends StatefulWidget {
   const WordListPage({super.key, required this.category});
@@ -13,6 +17,18 @@ class WordListPage extends StatefulWidget {
 
 class _WordListPageState extends State<WordListPage> {
   String _search = '';
+
+  @override
+  void initState() {
+    super.initState();
+    StudySessionTracker.start(activity: LearningActivity.vocabulary);
+  }
+
+  @override
+  void dispose() {
+    StudySessionTracker.stop();
+    super.dispose();
+  }
 
   static final Map<String, List<Map<String, String>>> _mockWords = {
     'Words': [],
@@ -60,77 +76,82 @@ class _WordListPageState extends State<WordListPage> {
     }
     return Scaffold(
       backgroundColor: AppTheme.surface,
-      body: SafeArea(
+      body: ResponsivePage(
+        scroll: false,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back_ios_new, color: AppTheme.primary, size: 22),
+            Row(
+              children: [
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: Icon(
+                    Icons.arrow_back_ios_new,
+                    color: AppTheme.primary,
+                    size: Responsive.iconSizeSmall(context),
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      category,
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.primary,
-                      ),
+                  padding: EdgeInsets.zero,
+                  constraints: BoxConstraints(
+                    minWidth: Responsive.minTouchTarget(context),
+                    minHeight: Responsive.minTouchTarget(context),
+                  ),
+                ),
+                SizedBox(width: Responsive.gapSm(context)),
+                Expanded(
+                  child: Text(
+                    category,
+                    style: TextStyle(
+                      fontSize: Responsive.fontSizeTitle(context),
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primary,
                     ),
                   ),
-                  IconButton(
-                    onPressed: words.isEmpty
-                        ? null
-                        : () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => FlashcardPage(
-                                  words: words
-                                      .map((e) => {
-                                            'word': e['word']!,
-                                            'meaning': e['meaning']!,
-                                          })
-                                      .toList(),
-                                ),
+                ),
+                IconButton(
+                  onPressed: words.isEmpty
+                      ? null
+                      : () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => FlashcardPage(
+                                words: words
+                                    .map((e) => {
+                                          'word': e['word']!,
+                                          'meaning': e['meaning']!,
+                                        })
+                                    .toList(),
                               ),
                             ),
-                    icon: const Icon(Icons.style, color: AppTheme.primary),
-                    tooltip: 'Kartlar',
-                  ),
-                ],
-              ),
+                          ),
+                  icon: Icon(Icons.style, color: AppTheme.primary, size: Responsive.iconSizeSmall(context)),
+                  tooltip: 'Kartlar',
+                ),
+              ],
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: TextField(
-                onChanged: (v) => setState(() => _search = v),
-                decoration: InputDecoration(
-                  hintText: 'Kelime veya anlam ara...',
-                  prefixIcon: const Icon(Icons.search, color: AppTheme.primary),
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            SizedBox(height: Responsive.gapSm(context)),
+            TextField(
+              onChanged: (v) => setState(() => _search = v),
+              decoration: InputDecoration(
+                hintText: 'Kelime veya anlam ara...',
+                prefixIcon: const Icon(Icons.search, color: AppTheme.primary),
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: Responsive.gapMd(context),
+                  vertical: Responsive.gapSm(context),
                 ),
               ),
             ),
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Text(
-                '${words.length} kelime',
-                style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
-              ),
+            SizedBox(height: Responsive.gapSm(context)),
+            Text(
+              '${words.length} kelime',
+              style: TextStyle(fontSize: Responsive.fontSizeCaption(context), color: Colors.grey.shade600),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: Responsive.gapSm(context)),
             Expanded(
               child: words.isEmpty
                   ? Center(
@@ -142,7 +163,7 @@ class _WordListPageState extends State<WordListPage> {
                           Text(
                             'Sonuç bulunamadı',
                             style: TextStyle(
-                              fontSize: 18,
+                              fontSize: Responsive.fontSizeBody(context),
                               fontWeight: FontWeight.w600,
                               color: Colors.grey.shade600,
                             ),
@@ -150,7 +171,10 @@ class _WordListPageState extends State<WordListPage> {
                           const SizedBox(height: 8),
                           Text(
                             'Farklı bir kelime veya anlam deneyin.',
-                            style: TextStyle(color: Colors.grey.shade500),
+                            style: TextStyle(
+                              color: Colors.grey.shade500,
+                              fontSize: Responsive.fontSizeBodySmall(context),
+                            ),
                           ),
                         ],
                       ),
@@ -160,15 +184,15 @@ class _WordListPageState extends State<WordListPage> {
                         setState(() => _search = '');
                       },
                       child: ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        padding: EdgeInsets.zero,
                         itemCount: words.length,
                         itemBuilder: (context, i) {
                   final w = words[i];
                   return Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
+                    padding: EdgeInsets.only(bottom: Responsive.gapSm(context)),
                     child: Material(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
                       child: InkWell(
                         onTap: () => Navigator.push(
                           context,
@@ -180,10 +204,10 @@ class _WordListPageState extends State<WordListPage> {
                             ),
                           ),
                         ),
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
                         child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: AppTheme.cardDecoration.copyWith(
+                          padding: EdgeInsets.all(Responsive.cardPadding(context)),
+                          decoration: AppTheme.cardDecorationFor(context).copyWith(
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black.withOpacity(0.06),
@@ -195,25 +219,26 @@ class _WordListPageState extends State<WordListPage> {
                           child: Row(
                             children: [
                               CircleAvatar(
-                                radius: 24,
+                                radius: Responsive.iconSizeMedium(context) * 0.55,
                                 backgroundColor: AppTheme.primaryLight.withOpacity(0.5),
                                 child: Text(
                                   (w['word'] ?? '')[0].toUpperCase(),
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     color: AppTheme.primary,
+                                    fontSize: Responsive.fontSizeBody(context),
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: 16),
+                              SizedBox(width: Responsive.gapMd(context)),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       w['word']!,
-                                      style: const TextStyle(
-                                        fontSize: 18,
+                                      style: TextStyle(
+                                        fontSize: Responsive.fontSizeBody(context),
                                         fontWeight: FontWeight.bold,
                                         color: AppTheme.primary,
                                       ),
@@ -221,7 +246,7 @@ class _WordListPageState extends State<WordListPage> {
                                     Text(
                                       w['meaning']!,
                                       style: TextStyle(
-                                        fontSize: 14,
+                                        fontSize: Responsive.fontSizeBodySmall(context),
                                         color: Colors.grey.shade600,
                                       ),
                                     ),

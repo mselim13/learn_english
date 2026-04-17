@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import '../theme/app_theme.dart';
 import '../utils/responsive.dart';
+import '../services/study_session_tracker.dart';
+import '../services/stats_store.dart';
 
 class QuizPage extends StatefulWidget {
   const QuizPage({super.key, this.category = 'Words'});
@@ -26,6 +28,18 @@ class _QuizPageState extends State<QuizPage> {
     {'word': 'Friend', 'options': ['Düşman', 'Öğretmen', 'Arkadaş', 'Aile'], 'correct': 2},
     {'word': 'Water', 'options': ['Yemek', 'Su', 'Süt', 'Kahve'], 'correct': 1},
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    StudySessionTracker.start(activity: LearningActivity.quiz);
+  }
+
+  @override
+  void dispose() {
+    StudySessionTracker.stop();
+    super.dispose();
+  }
 
   void _onSelect(int i) {
     if (_answered) return;
@@ -140,7 +154,7 @@ class _QuizPageState extends State<QuizPage> {
                     horizontal: Responsive.cardPadding(context) * 1.5,
                     vertical: Responsive.cardPadding(context),
                   ),
-                  decoration: AppTheme.cardDecoration,
+                  decoration: AppTheme.cardDecorationFor(context),
                   child: Text(
                     q['word'] as String,
                     style: TextStyle(

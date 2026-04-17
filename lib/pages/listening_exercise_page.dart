@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../utils/responsive.dart';
+import '../services/study_session_tracker.dart';
+import '../services/stats_store.dart';
 
 class ListeningExercisePage extends StatefulWidget {
   const ListeningExercisePage({super.key});
@@ -24,6 +26,7 @@ class _ListeningExercisePageState extends State<ListeningExercisePage> {
   @override
   void initState() {
     super.initState();
+    StudySessionTracker.start(activity: LearningActivity.listening);
     for (var i = 0; i < _sentences.length; i++) {
       _writingControllers.add(TextEditingController());
       _focusNodes.add(FocusNode());
@@ -32,6 +35,7 @@ class _ListeningExercisePageState extends State<ListeningExercisePage> {
 
   @override
   void dispose() {
+    StudySessionTracker.stop();
     for (final c in _writingControllers) {
       c.dispose();
     }
@@ -72,7 +76,7 @@ class _ListeningExercisePageState extends State<ListeningExercisePage> {
                   Container(
                     width: double.infinity,
                     padding: EdgeInsets.all(Responsive.cardPadding(context)),
-                    decoration: AppTheme.cardDecoration,
+                    decoration: AppTheme.cardDecorationFor(context),
                 child: Column(
                   children: [
                     Icon(
@@ -146,7 +150,7 @@ class _ListeningExercisePageState extends State<ListeningExercisePage> {
               Container(
                 width: double.infinity,
                 padding: EdgeInsets.all(Responsive.cardPadding(context)),
-                decoration: AppTheme.cardDecoration,
+                decoration: AppTheme.cardDecorationFor(context),
                 child: TextField(
                   controller: _writingControllers[_currentIndex],
                   focusNode: _focusNodes[_currentIndex],

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../utils/responsive.dart';
+import '../widgets/responsive_page.dart';
 
 class PrivacyPolicyPage extends StatelessWidget {
   const PrivacyPolicyPage({super.key});
@@ -31,25 +33,23 @@ Verilerinize erişim, düzeltme veya silme talebinde bulunabilirsiniz.
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.surface,
-      body: SafeArea(
+      body: ResponsivePage(
+        scroll: false,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: AppTheme.buildAppBar(context, 'Gizlilik politikası'),
-            ),
+            AppTheme.buildAppBar(context, 'Gizlilik politikası'),
+            SizedBox(height: Responsive.gapMd(context)),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(24),
-                  decoration: AppTheme.cardDecoration,
+                  padding: EdgeInsets.all(Responsive.cardPadding(context)),
+                  decoration: AppTheme.cardDecorationFor(context),
                   child: Text(
                     _text,
                     style: TextStyle(
-                      fontSize: 15,
+                      fontSize: Responsive.fontSizeBody(context),
                       height: 1.7,
                       color: Colors.grey.shade800,
                     ),

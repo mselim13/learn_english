@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../utils/responsive.dart';
+import '../widgets/responsive_page.dart';
 
 class HelpFaqPage extends StatelessWidget {
   const HelpFaqPage({super.key});
@@ -18,43 +20,43 @@ class HelpFaqPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final gapSm = Responsive.gapSm(context);
     return Scaffold(
       backgroundColor: AppTheme.surface,
-      body: SafeArea(
+      body: ResponsivePage(
+        scroll: false,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: AppTheme.buildAppBar(context, 'Yardım ve SSS'),
-            ),
+            AppTheme.buildAppBar(context, 'Yardım ve SSS'),
+            SizedBox(height: Responsive.gapMd(context)),
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: EdgeInsets.zero,
                 children: [
                   ...List.generate(_faq.length, (i) {
                     final item = _faq[i];
                     return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
+                      padding: EdgeInsets.only(bottom: gapSm),
                       child: Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: AppTheme.cardDecoration,
+                        padding: EdgeInsets.all(Responsive.cardPadding(context)),
+                        decoration: AppTheme.cardDecorationFor(context),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               item['q']!,
-                              style: const TextStyle(
-                                fontSize: 16,
+                              style: TextStyle(
+                                fontSize: Responsive.fontSizeBody(context),
                                 fontWeight: FontWeight.w600,
                                 color: AppTheme.primary,
                               ),
                             ),
-                            const SizedBox(height: 12),
+                            SizedBox(height: gapSm),
                             Text(
                               item['a']!,
                               style: TextStyle(
-                                fontSize: 14,
+                                fontSize: Responsive.fontSizeBodySmall(context),
                                 height: 1.5,
                                 color: Colors.grey.shade700,
                               ),
@@ -64,38 +66,52 @@ class HelpFaqPage extends StatelessWidget {
                       ),
                     );
                   }),
-                  const SizedBox(height: 12),
+                  SizedBox(height: gapSm),
                   Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: AppTheme.cardDecoration,
+                    padding: EdgeInsets.all(Responsive.cardPadding(context)),
+                    decoration: AppTheme.cardDecorationFor(context),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'İletişim',
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: Responsive.fontSizeBody(context),
                             fontWeight: FontWeight.bold,
                             color: AppTheme.primary,
                           ),
                         ),
-                        const SizedBox(height: 12),
+                        SizedBox(height: gapSm),
                         Text(
                           'Sorunuz mu var? Bize ulaşın.',
-                          style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
+                          style: TextStyle(
+                            fontSize: Responsive.fontSizeBodySmall(context),
+                            color: Colors.grey.shade700,
+                          ),
                         ),
-                        const SizedBox(height: 12),
+                        SizedBox(height: gapSm),
                         Row(
                           children: [
-                            Icon(Icons.email_outlined, size: 20, color: AppTheme.primary),
-                            const SizedBox(width: 8),
-                            const Text('support@learnenglish.app', style: TextStyle(fontSize: 14, color: AppTheme.primary)),
+                            Icon(
+                              Icons.email_outlined,
+                              size: Responsive.iconSizeSmall(context),
+                              color: AppTheme.primary,
+                            ),
+                            SizedBox(width: Responsive.gapSm(context)),
+                            const Expanded(
+                              child: Text(
+                                'support@learnenglish.app',
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(color: AppTheme.primary),
+                              ),
+                            ),
                           ],
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: Responsive.gapLg(context)),
                 ],
               ),
             ),

@@ -1,5 +1,3 @@
-import 'package:flutter/foundation.dart';
-
 import 'app_prefs.dart';
 import 'profile_notifier.dart';
 

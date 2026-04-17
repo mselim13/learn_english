@@ -7,6 +7,8 @@ class AppPrefs {
   static const _keySavedEmail = 'saved_email';
   static const _keyUserName = 'user_name';
   static const _keyUserLevel = 'user_level';
+  static const _keyPlacementTestCompleted = 'placement_test_completed';
+  static const _keyPlacementTestScore = 'placement_test_score';
   static const _keyUserEmail = 'user_email';
   static const _keyLoggedIn = 'logged_in';
   static const _keyAvatarPath = 'avatar_path';
@@ -81,6 +83,26 @@ class AppPrefs {
   static Future<void> setUserLevel(String value) async {
     final p = await _prefs;
     await p.setString(_keyUserLevel, value);
+  }
+
+  static Future<bool> getPlacementTestCompleted() async {
+    final p = await _prefs;
+    return p.getBool(_keyPlacementTestCompleted) ?? false;
+  }
+
+  static Future<void> setPlacementTestCompleted(bool value) async {
+    final p = await _prefs;
+    await p.setBool(_keyPlacementTestCompleted, value);
+  }
+
+  static Future<int?> getPlacementTestScore() async {
+    final p = await _prefs;
+    return p.getInt(_keyPlacementTestScore);
+  }
+
+  static Future<void> setPlacementTestScore(int score) async {
+    final p = await _prefs;
+    await p.setInt(_keyPlacementTestScore, score);
   }
 
   static Future<String?> getUserEmail() async {

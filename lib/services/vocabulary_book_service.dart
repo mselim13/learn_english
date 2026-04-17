@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'stats_store.dart';
+
 /// Kelime defteri: kullanıcının eklediği kelimeler (SharedPreferences).
 class VocabularyBookService {
   static const _key = 'vocabulary_book_json';
@@ -52,6 +54,7 @@ class VocabularyBookService {
       'example': example.trim(),
     });
     await _save(list);
+    await StatsStore.recomputeBadges();
   }
 
   static Future<void> removeById(String id) async {
@@ -59,6 +62,7 @@ class VocabularyBookService {
     final list = await loadWords();
     list.removeWhere((e) => e['id'] == id);
     await _save(list);
+    await StatsStore.recomputeBadges();
   }
 
   /// Aynı kelime+anlam tekrar eklenmesin (isteğe bağlı).

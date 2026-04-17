@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../utils/responsive.dart';
+import '../widgets/responsive_page.dart';
 
 class NotificationSettingsPage extends StatefulWidget {
   const NotificationSettingsPage({super.key});
@@ -17,90 +19,89 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.surface,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AppTheme.buildAppBar(context, 'Bildirim ayarları'),
-              const SizedBox(height: 24),
-              _buildSwitchRow(
-                'Bildirimler',
-                'Tüm uygulama bildirimleri',
-                _enabled,
-                (v) => setState(() => _enabled = v),
+      body: ResponsivePage(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AppTheme.buildAppBar(context, 'Bildirim ayarları'),
+            SizedBox(height: Responsive.gapLg(context)),
+            _buildSwitchRow(
+              context,
+              'Bildirimler',
+              'Tüm uygulama bildirimleri',
+              _enabled,
+              (v) => setState(() => _enabled = v),
+            ),
+            SizedBox(height: Responsive.gapSm(context)),
+            _buildSwitchRow(
+              context,
+              'Günlük hatırlatıcı',
+              'Her gün öğrenmeye devam et',
+              _dailyReminder,
+              (v) => setState(() => _dailyReminder = v),
+            ),
+            SizedBox(height: Responsive.gapLg(context)),
+            Text(
+              'Hatırlatma saati',
+              style: TextStyle(
+                fontSize: Responsive.fontSizeBody(context),
+                fontWeight: FontWeight.w600,
+                color: AppTheme.primary,
               ),
-              const SizedBox(height: 12),
-              _buildSwitchRow(
-                'Günlük hatırlatıcı',
-                'Her gün öğrenmeye devam et',
-                _dailyReminder,
-                (v) => setState(() => _dailyReminder = v),
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'Hatırlatma saati',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.primary,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Material(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                child: InkWell(
-                  onTap: () async {
-                    final t = await showTimePicker(
-                      context: context,
-                      initialTime: _reminderTime,
-                    );
-                    if (t != null) setState(() => _reminderTime = t);
-                  },
-                  borderRadius: BorderRadius.circular(16),
-                  child: Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: AppTheme.cardDecoration.copyWith(
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.06),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
+            ),
+            SizedBox(height: Responsive.gapSm(context)),
+            Material(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
+              child: InkWell(
+                onTap: () async {
+                  final t = await showTimePicker(
+                    context: context,
+                    initialTime: _reminderTime,
+                  );
+                  if (t != null) setState(() => _reminderTime = t);
+                },
+                borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
+                child: Container(
+                  padding: EdgeInsets.all(Responsive.cardPadding(context)),
+                  decoration: AppTheme.cardDecorationFor(context).copyWith(
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.06),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.schedule, color: AppTheme.primary),
+                      SizedBox(width: Responsive.gapMd(context)),
+                      Text(
+                        '${_reminderTime.hour.toString().padLeft(2, '0')}:${_reminderTime.minute.toString().padLeft(2, '0')}',
+                        style: TextStyle(
+                          fontSize: Responsive.fontSizeTitleSmall(context),
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.primary,
                         ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.schedule, color: AppTheme.primary),
-                        const SizedBox(width: 16),
-                        Text(
-                          '${_reminderTime.hour.toString().padLeft(2, '0')}:${_reminderTime.minute.toString().padLeft(2, '0')}',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.primary,
-                          ),
-                        ),
-                        const Spacer(),
-                        const Icon(Icons.chevron_right, color: AppTheme.primary),
-                      ],
-                    ),
+                      ),
+                      const Spacer(),
+                      const Icon(Icons.chevron_right, color: AppTheme.primary),
+                    ],
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildSwitchRow(String title, String subtitle, bool value, ValueChanged<bool> onChanged) {
+  Widget _buildSwitchRow(BuildContext context, String title, String subtitle, bool value, ValueChanged<bool> onChanged) {
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: AppTheme.cardDecoration,
+      padding: EdgeInsets.all(Responsive.cardPadding(context)),
+      decoration: AppTheme.cardDecorationFor(context),
       child: Row(
         children: [
           Expanded(
@@ -109,15 +110,18 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    fontSize: 16,
+                  style: TextStyle(
+                    fontSize: Responsive.fontSizeBody(context),
                     fontWeight: FontWeight.w600,
                     color: AppTheme.primary,
                   ),
                 ),
                 Text(
                   subtitle,
-                  style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                  style: TextStyle(
+                    fontSize: Responsive.fontSizeBodySmall(context),
+                    color: Colors.grey.shade600,
+                  ),
                 ),
               ],
             ),

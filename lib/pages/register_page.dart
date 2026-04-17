@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'after_register_page.dart';
 import '../services/auth_service.dart';
+import '../utils/responsive.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -24,103 +25,99 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
+    final headerHeight = Responsive.scaled(context, min: 150, max: 220);
+    final cardPad = Responsive.cardPadding(context);
+    final radius = Responsive.cardRadius(context) + 12;
     return Scaffold(
       backgroundColor: Colors.grey.shade200,
-      body: Column(
-        children: [
-
-          Container(
-            height: 180,
-            width: double.infinity,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFFD7C4EA),
-                  Color(0xFF7A3EC8),
-                ],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-            ),
-            alignment: Alignment.center,
-            child: const Text(
-              "LinguaAI",
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: Colors.deepPurple,
-              ),
-            ),
-          ),
-
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.all(24),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Container(
+              height: headerHeight,
+              width: double.infinity,
               decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(
-                  top: Radius.circular(30),
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFFD7C4EA),
+                    Color(0xFF7A3EC8),
+                  ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
                 ),
               ),
-              child: ListView(
-                children: [
-
-                  const Text(
-                    "Hesap Oluştur",
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.deepPurple,
-                    ),
-                  ),
-
-                  const SizedBox(height: 25),
-
-                  const Text("Ad Soyad"),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _nameController,
-                    decoration: InputDecoration(
-                      hintText: "örn. Nihan Karaca",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  const Text("E-Posta"),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _emailController,
-                    decoration: InputDecoration(
-                      hintText: "örn. nihan@gmail.com",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  const Text("Parola"),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _passwordController,
-                    obscureText: true,
-                    decoration: InputDecoration(
-                      hintText: "************",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 30),
-
-                  GestureDetector(
-                    onTap: () async {
+              alignment: Alignment.center,
+              child: Text(
+                "LinguaAI",
+                style: TextStyle(
+                  fontSize: Responsive.fontSizeTitle(context),
+                  fontWeight: FontWeight.bold,
+                  color: Colors.deepPurple,
+                ),
+              ),
+            ),
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(radius)),
+                ),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: Responsive.maxContentWidth(context)),
+                    child: Padding(
+                      padding: EdgeInsets.all(cardPad),
+                      child: ListView(
+                        children: [
+                          Text(
+                            "Hesap Oluştur",
+                            style: TextStyle(
+                              fontSize: Responsive.fontSizeTitle(context),
+                              fontWeight: FontWeight.bold,
+                              color: Colors.deepPurple,
+                            ),
+                          ),
+                          SizedBox(height: Responsive.gapLg(context)),
+                          Text("Ad Soyad", style: TextStyle(fontSize: Responsive.fontSizeBody(context))),
+                          SizedBox(height: Responsive.gapXs(context)),
+                          TextField(
+                            controller: _nameController,
+                            decoration: InputDecoration(
+                              hintText: "örn. Nihan Karaca",
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: Responsive.gapMd(context)),
+                          Text("E-Posta", style: TextStyle(fontSize: Responsive.fontSizeBody(context))),
+                          SizedBox(height: Responsive.gapXs(context)),
+                          TextField(
+                            controller: _emailController,
+                            decoration: InputDecoration(
+                              hintText: "örn. nihan@gmail.com",
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: Responsive.gapMd(context)),
+                          Text("Parola", style: TextStyle(fontSize: Responsive.fontSizeBody(context))),
+                          SizedBox(height: Responsive.gapXs(context)),
+                          TextField(
+                            controller: _passwordController,
+                            obscureText: true,
+                            decoration: InputDecoration(
+                              hintText: "************",
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: Responsive.gapLg(context)),
+                          GestureDetector(
+                            onTap: () async {
                       final result = await AuthService.registerWithEmail(
                         name: _nameController.text,
                         email: _emailController.text,
@@ -158,53 +155,38 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                       );
                     },
-                    child: Container(
-                      height: 55,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(18),
-                        gradient: const LinearGradient(
-                          colors: [
-                            Color(0xFFD7C4EA),
-                            Color(0xFF7A3EC8),
-                          ],
-                        ),
-                      ),
-                      child: const Text(
-                        "Kaydol",
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
+                            child: Container(
+                              height: Responsive.minTouchTarget(context),
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    Color(0xFFD7C4EA),
+                                    Color(0xFF7A3EC8),
+                                  ],
+                                ),
+                              ),
+                              child: Text(
+                                "Kaydol",
+                                style: TextStyle(
+                                  fontSize: Responsive.fontSizeButton(context),
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: Responsive.gapLg(context)),
+                        ],
                       ),
                     ),
                   ),
-
-
-                  const SizedBox(height: 20),
-
-                  const Center(child: Text("----------- Ya Da -----------")),
-
-                  const SizedBox(height: 20),
-
-                  Container(
-                    height: 55,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: Colors.grey),
-                    ),
-                    child: const Text(
-                      "Google ile kaydol",
-                      style: TextStyle(fontSize: 16),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

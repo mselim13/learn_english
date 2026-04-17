@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import '../services/app_prefs.dart';
 import '../services/auth_service.dart';
 import 'onboarding_page.dart';
+import 'test_intro_page.dart';
 import 'welcome_page.dart';
-import 'login_page.dart';
 import '../navigation/main_navigation_page.dart';
 
 class SplashPage extends StatefulWidget {
@@ -42,10 +42,13 @@ class _SplashPageState extends State<SplashPage> {
         ),
       );
     } else if (authenticated) {
+      final completed = await AppPrefs.getPlacementTestCompleted();
+      if (!mounted) return;
       Navigator.pushReplacement(
         context,
         PageRouteBuilder(
-          pageBuilder: (_, __, ___) => const MainNavigationPage(),
+          pageBuilder: (_, __, ___) =>
+              completed ? const MainNavigationPage() : const TestIntroPage(),
           transitionsBuilder: (_, a, __, c) =>
               FadeTransition(opacity: a, child: c),
           transitionDuration: const Duration(milliseconds: 400),

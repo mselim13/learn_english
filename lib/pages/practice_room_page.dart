@@ -3,6 +3,8 @@ import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import '../theme/app_theme.dart';
 import '../utils/responsive.dart';
+import '../services/study_session_tracker.dart';
+import '../services/stats_store.dart';
 
 class PracticeRoomPage extends StatefulWidget {
   const PracticeRoomPage({super.key, this.mode = 'speaking'});
@@ -23,6 +25,11 @@ class _PracticeRoomPageState extends State<PracticeRoomPage> {
   @override
   void initState() {
     super.initState();
+    StudySessionTracker.start(
+      activity: widget.mode == 'speaking'
+          ? LearningActivity.speaking
+          : LearningActivity.writing,
+    );
     if (widget.mode == 'speaking') {
       _initSpeech();
     }
@@ -71,6 +78,7 @@ class _PracticeRoomPageState extends State<PracticeRoomPage> {
 
   @override
   void dispose() {
+    StudySessionTracker.stop();
     _controller.dispose();
     if (_speech.isListening) {
       _speech.stop();
@@ -134,7 +142,7 @@ class _PracticeRoomPageState extends State<PracticeRoomPage> {
                   Container(
                     width: double.infinity,
                     padding: EdgeInsets.all(Responsive.cardPadding(context)),
-                    decoration: AppTheme.cardDecoration,
+                    decoration: AppTheme.cardDecorationFor(context),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
