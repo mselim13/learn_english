@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:flutter/services.dart' show rootBundle;
+import '../services/vocabulary_book_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/responsive.dart';
 import '../widgets/responsive_page.dart';
@@ -14,22 +17,41 @@ class _TranslatePageState extends State<TranslatePage> {
   final _inputController = TextEditingController();
   String? _result;
   bool _loading = false;
+  Map<String, String> _dict = const {};
+  List<MapEntry<String, String>> _matches = const [];
 
-  static const Map<String, String> _mockDict = {
-    'hello': 'Merhaba',
-    'thank you': 'Teşekkürler',
-    'goodbye': 'Hoşça kal',
-    'please': 'Lütfen',
-    'yes': 'Evet',
-    'no': 'Hayır',
-    'water': 'Su',
-    'food': 'Yemek',
-    'friend': 'Arkadaş',
-    'family': 'Aile',
-    'how are you': 'Nasılsın?',
-    'good morning': 'Günaydın',
-    'good night': 'İyi geceler',
-  };
+  @override
+  void initState() {
+    super.initState();
+    _loadDict();
+    _inputController.addListener(_updateMatches);
+  }
+
+  Future<void> _loadDict() async {
+    try {
+      final raw = await rootBundle.loadString('assets/dictionaries/en_tr_basic.json');
+      final data = (jsonDecode(raw) as Map).map((k, v) => MapEntry(k.toString(), v.toString()));
+      if (!mounted) return;
+      setState(() => _dict = data);
+      _updateMatches();
+    } catch (_) {
+      // keep empty; UI will show fallback
+    }
+  }
+
+  void _updateMatches() {
+    final q = _inputController.text.trim().toLowerCase();
+    if (q.isEmpty || _dict.isEmpty) {
+      if (_matches.isNotEmpty) setState(() => _matches = const []);
+      return;
+    }
+    final out = <MapEntry<String, String>>[];
+    for (final e in _dict.entries) {
+      if (e.key.contains(q)) out.add(MapEntry(e.key, e.value));
+      if (out.length >= 12) break;
+    }
+    setState(() => _matches = out);
+  }
 
   void _translate() {
     final text = _inputController.text.trim().toLowerCase();
@@ -37,15 +59,17 @@ class _TranslatePageState extends State<TranslatePage> {
     setState(() => _loading = true);
     Future.delayed(const Duration(milliseconds: 600), () {
       if (!mounted) return;
+      final r = _dict.isEmpty ? null : _dict[text];
       setState(() {
         _loading = false;
-        _result = _mockDict[text] ?? 'Çeviri bulunamadı. (Örnek: hello, thank you, goodbye)';
+        _result = r ?? 'Çeviri bulunamadı. (Örnek: hello, thank you, welcome)';
       });
     });
   }
 
   @override
   void dispose() {
+    _inputController.removeListener(_updateMatches);
     _inputController.dispose();
     super.dispose();
   }
@@ -102,6 +126,32 @@ class _TranslatePageState extends State<TranslatePage> {
                 ),
               ),
             ),
+            if (_matches.isNotEmpty) ...[
+              SizedBox(height: Responsive.gapMd(context)),
+              Text(
+                'Sözlük',
+                style: TextStyle(
+                  fontSize: Responsive.fontSizeCaption(context),
+                  fontWeight: FontWeight.w700,
+                  color: Colors.grey.shade700,
+                ),
+              ),
+              SizedBox(height: Responsive.gapSm(context)),
+              ..._matches.map((e) => _DictRow(
+                    en: e.key,
+                    tr: e.value,
+                    onAdd: () async {
+                      await VocabularyBookService.addWord(word: e.key, meaning: e.value);
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Kelime defterine eklendi'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    },
+                  )),
+            ],
             if (_result != null) ...[
               SizedBox(height: Responsive.gapLg(context)),
               Container(
@@ -132,6 +182,49 @@ class _TranslatePageState extends State<TranslatePage> {
               ),
             ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DictRow extends StatelessWidget {
+  const _DictRow({required this.en, required this.tr, required this.onAdd});
+  final String en;
+  final String tr;
+  final VoidCallback onAdd;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: Responsive.gapXs(context)),
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
+          onTap: () {},
+          child: Padding(
+            padding: EdgeInsets.all(Responsive.cardPadding(context) * 0.75),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(en, style: const TextStyle(fontWeight: FontWeight.w700)),
+                      Text(tr, style: TextStyle(color: Colors.grey.shade700)),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Kelime defterine ekle',
+                  onPressed: onAdd,
+                  icon: const Icon(Icons.add_circle_outline, color: AppTheme.primary),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

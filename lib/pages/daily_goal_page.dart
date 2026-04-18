@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../services/app_prefs.dart';
+import '../services/stats_store.dart';
 import '../theme/app_theme.dart';
 import '../utils/responsive.dart';
 import '../widgets/responsive_page.dart';
@@ -12,10 +14,42 @@ class DailyGoalPage extends StatefulWidget {
 
 class _DailyGoalPageState extends State<DailyGoalPage> {
   int _goalMinutes = 20;
-  int _todayMinutes = 15;
+  int _todayMinutes = 0;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final goal = await AppPrefs.getDailyGoalMinutes();
+    final today = await StatsStore.getStudyMinutesForDay(DateTime.now());
+    if (!mounted) return;
+    setState(() {
+      _goalMinutes = goal;
+      _todayMinutes = today;
+      _loading = false;
+    });
+  }
+
+  Future<void> _setGoal(int minutes) async {
+    final v = minutes.clamp(5, 240);
+    setState(() => _goalMinutes = v);
+    await AppPrefs.setDailyGoalMinutes(v);
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_loading) {
+      return Scaffold(
+        backgroundColor: AppTheme.surface,
+        body: const Center(
+          child: CircularProgressIndicator(color: AppTheme.primary),
+        ),
+      );
+    }
     final progress = (_todayMinutes / _goalMinutes).clamp(0.0, 1.0);
     return Scaffold(
       backgroundColor: AppTheme.surface,
@@ -67,7 +101,7 @@ class _DailyGoalPageState extends State<DailyGoalPage> {
                     child: LinearProgressIndicator(
                       value: progress,
                       minHeight: Responsive.scaled(context, min: 10, max: 14),
-                      backgroundColor: AppTheme.primaryLight.withOpacity(0.3),
+                      backgroundColor: AppTheme.primaryLight.withValues(alpha: 0.3),
                       valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primary),
                     ),
                   ),
@@ -87,7 +121,7 @@ class _DailyGoalPageState extends State<DailyGoalPage> {
               width: double.infinity,
               padding: EdgeInsets.all(Responsive.cardPadding(context) * 0.85),
               decoration: BoxDecoration(
-                color: AppTheme.primaryLight.withOpacity(0.3),
+                color: AppTheme.primaryLight.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
                 border: Border.all(color: AppTheme.primaryLight),
               ),
@@ -117,7 +151,7 @@ class _DailyGoalPageState extends State<DailyGoalPage> {
             Row(
               children: [
                 IconButton(
-                  onPressed: () => setState(() => _goalMinutes = (_goalMinutes - 5).clamp(5, 120)),
+                  onPressed: () => _setGoal(_goalMinutes - 5),
                   icon: Icon(Icons.remove_circle_outline, color: AppTheme.primary, size: Responsive.iconSizeLarge(context) * 0.55),
                 ),
                 SizedBox(width: Responsive.gapMd(context)),
@@ -131,7 +165,7 @@ class _DailyGoalPageState extends State<DailyGoalPage> {
                 ),
                 SizedBox(width: Responsive.gapMd(context)),
                 IconButton(
-                  onPressed: () => setState(() => _goalMinutes = (_goalMinutes + 5).clamp(5, 120)),
+                  onPressed: () => _setGoal(_goalMinutes + 5),
                   icon: Icon(Icons.add_circle_outline, color: AppTheme.primary, size: Responsive.iconSizeLarge(context) * 0.55),
                 ),
               ],

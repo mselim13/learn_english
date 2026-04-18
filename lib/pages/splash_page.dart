@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import '../services/app_prefs.dart';
-import '../services/auth_service.dart';
-import 'onboarding_page.dart';
 import 'test_intro_page.dart';
 import 'welcome_page.dart';
 import '../navigation/main_navigation_page.dart';
@@ -23,48 +21,28 @@ class _SplashPageState extends State<SplashPage> {
   Future<void> _navigate() async {
     await Future.delayed(const Duration(milliseconds: 1800));
     if (!mounted) return;
-    final seen = await AppPrefs.getOnboardingSeen();
-    final authenticated = await AuthService.isAuthenticated();
+    final hasRegisteredUser = await AppPrefs.hasRegisteredUser();
+    final completed = await AppPrefs.getPlacementTestCompleted();
     if (!mounted) return;
-    if (!authenticated) {
-      await AuthService.logout();
-    } else {
+
+    final Widget next = !hasRegisteredUser
+        ? const WelcomePage()
+        : (completed ? const MainNavigationPage() : const TestIntroPage());
+
+    if (hasRegisteredUser) {
       await AppPrefs.ensureMembershipDateIfMissing();
     }
-    if (!seen) {
-      Navigator.pushReplacement(
-        context,
-        PageRouteBuilder(
-          pageBuilder: (_, __, ___) => const OnboardingPage(),
-          transitionsBuilder: (_, a, __, c) =>
-              FadeTransition(opacity: a, child: c),
-          transitionDuration: const Duration(milliseconds: 400),
-        ),
-      );
-    } else if (authenticated) {
-      final completed = await AppPrefs.getPlacementTestCompleted();
-      if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        PageRouteBuilder(
-          pageBuilder: (_, __, ___) =>
-              completed ? const MainNavigationPage() : const TestIntroPage(),
-          transitionsBuilder: (_, a, __, c) =>
-              FadeTransition(opacity: a, child: c),
-          transitionDuration: const Duration(milliseconds: 400),
-        ),
-      );
-    } else {
-      Navigator.pushReplacement(
-        context,
-        PageRouteBuilder(
-          pageBuilder: (_, __, ___) => const WelcomePage(),
-          transitionsBuilder: (_, a, __, c) =>
-              FadeTransition(opacity: a, child: c),
-          transitionDuration: const Duration(milliseconds: 400),
-        ),
-      );
-    }
+
+    if (!mounted) return;
+    Navigator.pushReplacement(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (_, __, ___) => next,
+        transitionsBuilder: (_, a, __, c) =>
+            FadeTransition(opacity: a, child: c),
+        transitionDuration: const Duration(milliseconds: 400),
+      ),
+    );
   }
 
   @override

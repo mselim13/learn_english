@@ -13,6 +13,10 @@ class AppPrefs {
   static const _keyLoggedIn = 'logged_in';
   static const _keyAvatarPath = 'avatar_path';
   static const _keyMembershipJoinedAtMs = 'membership_joined_at_ms';
+  static const _keyDailyGoalMinutes = 'daily_goal_minutes';
+  static const _keyNotificationsEnabled = 'notifications_enabled';
+  static const _keyDailyReminderEnabled = 'notifications_daily_reminder_enabled';
+  static const _keyDailyReminderTimeMinutes = 'notifications_daily_reminder_time_minutes';
 
   static Future<SharedPreferences> get _prefs async =>
       await SharedPreferences.getInstance();
@@ -142,6 +146,47 @@ class AppPrefs {
        await p.setString(_keyAvatarPath, value);
      }
    }
+
+  static Future<int> getDailyGoalMinutes() async {
+    final p = await _prefs;
+    return p.getInt(_keyDailyGoalMinutes) ?? 20;
+  }
+
+  static Future<void> setDailyGoalMinutes(int minutes) async {
+    final p = await _prefs;
+    await p.setInt(_keyDailyGoalMinutes, minutes.clamp(5, 240));
+  }
+
+  static Future<bool> getNotificationsEnabled() async {
+    final p = await _prefs;
+    return p.getBool(_keyNotificationsEnabled) ?? true;
+  }
+
+  static Future<void> setNotificationsEnabled(bool value) async {
+    final p = await _prefs;
+    await p.setBool(_keyNotificationsEnabled, value);
+  }
+
+  static Future<bool> getDailyReminderEnabled() async {
+    final p = await _prefs;
+    return p.getBool(_keyDailyReminderEnabled) ?? true;
+  }
+
+  static Future<void> setDailyReminderEnabled(bool value) async {
+    final p = await _prefs;
+    await p.setBool(_keyDailyReminderEnabled, value);
+  }
+
+  /// Minutes since midnight (0..1439). Default 20:00.
+  static Future<int> getDailyReminderTimeMinutes() async {
+    final p = await _prefs;
+    return (p.getInt(_keyDailyReminderTimeMinutes) ?? (20 * 60)).clamp(0, 1439);
+  }
+
+  static Future<void> setDailyReminderTimeMinutes(int minutes) async {
+    final p = await _prefs;
+    await p.setInt(_keyDailyReminderTimeMinutes, minutes.clamp(0, 1439));
+  }
 
   /// İlk kayıt / ilk giriş anı (milisaniye epoch).
   static Future<int?> getMembershipJoinedAtMs() async {

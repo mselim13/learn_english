@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../services/app_prefs.dart';
+import '../services/notification_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/responsive.dart';
 import '../widgets/responsive_page.dart';
@@ -14,9 +16,51 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
   bool _enabled = true;
   bool _dailyReminder = true;
   TimeOfDay _reminderTime = const TimeOfDay(hour: 20, minute: 0);
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final enabled = await AppPrefs.getNotificationsEnabled();
+    final daily = await AppPrefs.getDailyReminderEnabled();
+    final mins = await AppPrefs.getDailyReminderTimeMinutes();
+    final t = TimeOfDay(hour: mins ~/ 60, minute: mins % 60);
+    if (!mounted) return;
+    setState(() {
+      _enabled = enabled;
+      _dailyReminder = daily;
+      _reminderTime = t;
+      _loading = false;
+    });
+    await _applyScheduling();
+  }
+
+  Future<void> _applyScheduling() async {
+    if (!_enabled || !_dailyReminder) {
+      await NotificationService.cancelDailyReminder();
+      return;
+    }
+    await NotificationService.requestPermissionIfNeeded();
+    await NotificationService.scheduleDailyReminder(
+      hour: _reminderTime.hour,
+      minute: _reminderTime.minute,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_loading) {
+      return Scaffold(
+        backgroundColor: AppTheme.surface,
+        body: const Center(
+          child: CircularProgressIndicator(color: AppTheme.primary),
+        ),
+      );
+    }
     return Scaffold(
       backgroundColor: AppTheme.surface,
       body: ResponsivePage(
@@ -30,7 +74,11 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
               'Bildirimler',
               'Tüm uygulama bildirimleri',
               _enabled,
-              (v) => setState(() => _enabled = v),
+              (v) async {
+                setState(() => _enabled = v);
+                await AppPrefs.setNotificationsEnabled(v);
+                await _applyScheduling();
+              },
             ),
             SizedBox(height: Responsive.gapSm(context)),
             _buildSwitchRow(
@@ -38,7 +86,11 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
               'Günlük hatırlatıcı',
               'Her gün öğrenmeye devam et',
               _dailyReminder,
-              (v) => setState(() => _dailyReminder = v),
+              (v) async {
+                setState(() => _dailyReminder = v);
+                await AppPrefs.setDailyReminderEnabled(v);
+                await _applyScheduling();
+              },
             ),
             SizedBox(height: Responsive.gapLg(context)),
             Text(
@@ -59,7 +111,10 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                     context: context,
                     initialTime: _reminderTime,
                   );
-                  if (t != null) setState(() => _reminderTime = t);
+                  if (t == null) return;
+                  setState(() => _reminderTime = t);
+                  await AppPrefs.setDailyReminderTimeMinutes(t.hour * 60 + t.minute);
+                  await _applyScheduling();
                 },
                 borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
                 child: Container(
@@ -88,6 +143,32 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                       const Spacer(),
                       const Icon(Icons.chevron_right, color: AppTheme.primary),
                     ],
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(height: Responsive.gapLg(context)),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () async {
+                  await NotificationService.requestPermissionIfNeeded();
+                  await NotificationService.showNow(
+                    title: 'Notification test',
+                    body: 'This is a test notification from the app.',
+                  );
+                },
+                icon: const Icon(Icons.notifications_active_outlined),
+                label: const Text('Test bildirimi gönder'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppTheme.primary,
+                  side: const BorderSide(color: AppTheme.primary),
+                  minimumSize: Size(0, Responsive.minTouchTarget(context)),
+                  padding: EdgeInsets.symmetric(
+                    vertical: Responsive.buttonPaddingVertical(context),
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
                   ),
                 ),
               ),

@@ -8,6 +8,8 @@ import '../pages/welcome_page.dart';
 import '../services/auth_service.dart';
 import '../utils/responsive.dart';
 
+typedef VocabularyBookRefresh = Future<void> Function();
+
 class MainNavigationPage extends StatefulWidget {
   const MainNavigationPage({super.key});
 
@@ -17,6 +19,7 @@ class MainNavigationPage extends StatefulWidget {
 
 class _MainNavigationPageState extends State<MainNavigationPage> {
   int _selectedIndex = 0;
+  VocabularyBookRefresh? _refreshVocab;
 
   @override
   void initState() {
@@ -37,12 +40,14 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
     }
   }
 
-  final List<Widget> _pages = const [
-    HomePage(),
-    AiConversationPage(),
-    VocabularyBookPage(),
-    StatsPage(),
-    ProfilePage(),
+  late final List<Widget> _pages = [
+    const HomePage(),
+    const AiConversationPage(),
+    VocabularyBookPage(
+      onExposeRefresh: (fn) => _refreshVocab = fn,
+    ),
+    const StatsPage(),
+    const ProfilePage(),
   ];
 
   void _onItemTapped(int index) {
@@ -50,6 +55,10 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
     setState(() {
       _selectedIndex = index;
     });
+    if (index == 2) {
+      // Refresh vocabulary book when switching tabs (IndexedStack keeps state).
+      _refreshVocab?.call();
+    }
   }
 
   @override

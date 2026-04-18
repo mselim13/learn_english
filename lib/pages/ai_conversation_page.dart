@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
@@ -22,13 +24,13 @@ class AiConversationPage extends StatefulWidget {
 }
 
 class _AiConversationPageState extends State<AiConversationPage> {
-  static const _welcomeLocal =
-      "EN: Hi! I'm your offline English practice partner. Add a GGUF model file as chat_model.gguf in the app documents folder (or set CHAT_GGUF_PATH when building) for full AI replies — otherwise I use built-in templates.\n"
-      "TR: Merhaba! Çevrimdışı İngilizce partnerinim. Tam AI yanıtı için uygulama belgelerine `chat_model.gguf` GGUF dosyasını koy (veya derlemede CHAT_GGUF_PATH tanımla) — yoksa yerleşik şablonları kullanırım.";
+  static const _welcomeTemplates =
+      "Hi! I'm your English practice partner.\n"
+      "You're in offline basic mode (no GGUF model), so my replies are simpler.\n"
+      "If you add a GGUF model as chat_model.gguf, I can chat much more naturally.";
 
-  static const _welcomeLlama =
-      "EN: Your offline GGUF model is loaded — we're chatting without the internet. Type or use the mic; the transcript stays here.\n"
-      "TR: Çevrimdışı GGUF modelin yüklü — internetsiz konuşuyoruz. Yaz veya mikrofonu kullan; konuşma burada kalır.";
+  static const _welcomeGguf =
+      "Hi! Your offline GGUF model is loaded—I'll reply in English. Send a message!";
 
   final _scroll = ScrollController();
   final _input = TextEditingController();
@@ -37,18 +39,19 @@ class _AiConversationPageState extends State<AiConversationPage> {
 
   late List<_ChatTurn> _turns;
 
+  bool _hasGguf = false;
+
   bool _speechReady = false;
   bool _listening = false;
   String _partialSpeech = '';
   bool _sending = false;
   String? _ttsBusyId;
-  bool _hasGguf = false;
 
   @override
   void initState() {
     super.initState();
     _turns = [
-      _ChatTurn(isUser: false, text: _welcomeLocal),
+      const _ChatTurn(isUser: false, text: _welcomeTemplates),
     ];
     _initSpeech();
     _initTts();
@@ -61,16 +64,12 @@ class _AiConversationPageState extends State<AiConversationPage> {
     setState(() {
       _hasGguf = ok;
       if (_turns.length == 1 && !_turns[0].isUser) {
-        _turns[0] = _ChatTurn(isUser: false, text: _welcomeForMode);
+        _turns[0] = _ChatTurn(isUser: false, text: _hasGguf ? _welcomeGguf : _welcomeTemplates);
       }
     });
   }
 
-  String get _welcomeForMode => _hasGguf ? _welcomeLlama : _welcomeLocal;
-
-  String get _statusLine => _hasGguf
-      ? 'Çevrimdışı GGUF (llama.cpp)'
-      : 'GGUF yok — yerleşik şablon';
+  String get _statusLine => _hasGguf ? 'Offline GGUF (llama.cpp)' : 'Offline templates';
 
   Future<void> _initSpeech() async {
     final ok = await _speech.initialize(
@@ -191,7 +190,6 @@ class _AiConversationPageState extends State<AiConversationPage> {
     _scrollToBottom();
 
     try {
-      final hadFile = await OfflineLlamaService.hasLocalModelFile();
       final result = await AiConversationService.completeWithSource(_apiMessages());
       if (!mounted) return;
       setState(() {
@@ -199,26 +197,17 @@ class _AiConversationPageState extends State<AiConversationPage> {
         _sending = false;
       });
       _scrollToBottom();
-      if (hadFile && result.backend == 'local' && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'GGUF model yanıt üretemedi; yerleşik şablon kullanıldı.',
-            ),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       setState(() {
         _turns.removeLast();
         _sending = false;
       });
       _input.text = text;
+      final msg = e.toString().replaceFirst('StateError: ', '');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Hata oluştu. Model yolu ve bellek için kontrol edin.'),
+        SnackBar(
+          content: Text(msg.isEmpty ? 'Something went wrong. Please try again.' : msg),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -229,34 +218,9 @@ class _AiConversationPageState extends State<AiConversationPage> {
     setState(() {
       _turns
         ..clear()
-        ..add(_ChatTurn(isUser: false, text: _welcomeForMode));
+        ..add(_ChatTurn(isUser: false, text: _hasGguf ? _welcomeGguf : _welcomeTemplates));
     });
     _scrollToBottom();
-  }
-
-  void _showModelHelp() {
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Çevrimdışı GGUF model'),
-        content: SingleChildScrollView(
-          child: Text(
-            '1) Hugging Face / Ollama ile uyumlu instruct GGUF indir (ör. Qwen2.5-0.5B-Instruct Q4_K_M).\n\n'
-            '2) Dosyayı şu ada kopyala: ${OfflineLlamaService.defaultModelFileName}\n'
-            '   Konum: uygulamanın belgeler (Documents) klasörü — cihaza göre Dosyalar veya Android data klasörü.\n\n'
-            '3) İsteğe bağlı: flutter run --dart-define=CHAT_GGUF_PATH=/tam/yol/model.gguf\n\n'
-            'Dataset ile LoRA fine-tune edip GGUF export ettikten sonra aynı dosya adıyla kullanabilirsin.',
-            style: TextStyle(fontSize: 14, color: Colors.grey.shade800),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Tamam'),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
@@ -306,24 +270,12 @@ class _AiConversationPageState extends State<AiConversationPage> {
                       ],
                     ),
                   ),
-                  IconButton(
-                    tooltip: 'GGUF model nasıl eklenir?',
-                    onPressed: _showModelHelp,
-                    icon: Icon(
-                      _hasGguf ? Icons.psychology_outlined : Icons.help_outline,
-                      color: AppTheme.primary,
-                    ),
-                  ),
                   PopupMenuButton<String>(
                     icon: Icon(Icons.more_vert, color: Colors.grey.shade700),
                     onSelected: (v) {
                       if (v == 'clear') _clearChat();
-                      if (v == 'refresh') _refreshModelState();
-                      if (v == 'help') _showModelHelp();
                     },
                     itemBuilder: (_) => const [
-                      PopupMenuItem(value: 'refresh', child: Text('Modeli yeniden kontrol et')),
-                      PopupMenuItem(value: 'help', child: Text('GGUF kurulumu')),
                       PopupMenuItem(value: 'clear', child: Text('Sohbeti temizle')),
                     ],
                   ),
@@ -344,42 +296,42 @@ class _AiConversationPageState extends State<AiConversationPage> {
             const SizedBox(height: 6),
             Expanded(
               child: ListView.builder(
-                controller: _scroll,
-                padding: EdgeInsets.fromLTRB(pad, 0, pad, 12),
-                itemCount: _turns.length + (_sending ? 1 : 0),
-                itemBuilder: (context, i) {
-                  if (_sending && i == _turns.length) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Row(
-                        children: [
-                          SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppTheme.primary.withValues(alpha: 0.7),
+                      controller: _scroll,
+                      padding: EdgeInsets.fromLTRB(pad, 0, pad, 12),
+                      itemCount: _turns.length + (_sending ? 1 : 0),
+                      itemBuilder: (context, i) {
+                        if (_sending && i == _turns.length) {
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Row(
+                              children: [
+                                SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppTheme.primary.withValues(alpha: 0.7),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Text(
+                                  'Typing a reply...',
+                                  style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                                ),
+                              ],
                             ),
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            'Yanıt yazılıyor...',
-                            style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-                  final turn = _turns[i];
-                  final bubbleId = '$i-${turn.isUser}';
-                  return _TranscriptBubble(
-                    turn: turn,
-                    bubbleId: bubbleId,
-                    ttsBusyId: _ttsBusyId,
-                    onSpeak: () => _speakAssistant(bubbleId, turn.text),
-                  );
-                },
-              ),
+                          );
+                        }
+                        final turn = _turns[i];
+                        final bubbleId = '$i-${turn.isUser}';
+                        return _TranscriptBubble(
+                          turn: turn,
+                          bubbleId: bubbleId,
+                          ttsBusyId: _ttsBusyId,
+                          onSpeak: () => _speakAssistant(bubbleId, turn.text),
+                        );
+                      },
+                    ),
             ),
             if (_listening && _partialSpeech.isNotEmpty)
               Padding(
@@ -394,62 +346,62 @@ class _AiConversationPageState extends State<AiConversationPage> {
                 ),
               ),
             Container(
-              padding: EdgeInsets.fromLTRB(pad, 8, pad, 8 + bottomInset),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.06),
-                    blurRadius: 12,
-                    offset: const Offset(0, -4),
-                  ),
-                ],
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  IconButton(
-                    tooltip: _listening ? 'Dinlemeyi bitir' : 'Konuş (İngilizce)',
-                    onPressed: _toggleListen,
-                    icon: Icon(
-                      _listening ? Icons.mic : Icons.mic_none_rounded,
-                      color: _listening ? Colors.red : AppTheme.primary,
+                padding: EdgeInsets.fromLTRB(pad, 8, pad, 8 + bottomInset),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.06),
+                      blurRadius: 12,
+                      offset: const Offset(0, -4),
                     ),
-                  ),
-                  Expanded(
-                    child: TextField(
-                      controller: _input,
-                      minLines: 1,
-                      maxLines: 4,
-                      textInputAction: TextInputAction.send,
-                      onSubmitted: _sending ? null : _sendUserText,
-                      decoration: InputDecoration(
-                        hintText: 'İngilizce veya Türkçe yazın...',
-                        filled: true,
-                        fillColor: Colors.grey.shade50,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide.none,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
+                  ],
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    IconButton(
+                      tooltip: _listening ? 'Stop listening' : 'Speak (English)',
+                      onPressed: _toggleListen,
+                      icon: Icon(
+                        _listening ? Icons.mic : Icons.mic_none_rounded,
+                        color: _listening ? Colors.red : AppTheme.primary,
+                      ),
+                    ),
+                    Expanded(
+                      child: TextField(
+                        controller: _input,
+                        minLines: 1,
+                        maxLines: 4,
+                        textInputAction: TextInputAction.send,
+                        onSubmitted: _sending ? null : _sendUserText,
+                        decoration: InputDecoration(
+                          hintText: 'Write in English or Turkish...',
+                          filled: true,
+                          fillColor: Colors.grey.shade50,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 6),
-                  IconButton.filled(
-                    style: IconButton.styleFrom(
-                      backgroundColor: AppTheme.primary,
-                      foregroundColor: Colors.white,
+                    const SizedBox(width: 6),
+                    IconButton.filled(
+                      style: IconButton.styleFrom(
+                        backgroundColor: AppTheme.primary,
+                        foregroundColor: Colors.white,
+                      ),
+                      onPressed: _sending ? null : () => _sendUserText(_input.text),
+                      icon: const Icon(Icons.send_rounded),
                     ),
-                    onPressed: _sending ? null : () => _sendUserText(_input.text),
-                    icon: const Icon(Icons.send_rounded),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
           ],
         ),
       ),

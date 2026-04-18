@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 import '../theme/app_theme.dart';
 import '../services/app_prefs.dart';
 import '../services/auth_service.dart';
@@ -15,6 +17,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final _emailController = TextEditingController();
   String _selectedLevel = 'A2';
   bool _loading = true;
+  String? _avatarPath;
+  final _picker = ImagePicker();
 
   @override
   void initState() {
@@ -26,14 +30,28 @@ class _EditProfilePageState extends State<EditProfilePage> {
     final name = await AppPrefs.getUserName();
     final email = await AppPrefs.getUserEmail();
     final level = await AppPrefs.getUserLevel();
+    final avatar = await AppPrefs.getAvatarPath();
     if (mounted) {
       setState(() {
         _nameController.text = name ?? '';
         _emailController.text = email ?? '';
         _selectedLevel = level;
+        _avatarPath = avatar;
         _loading = false;
       });
     }
+  }
+
+  Future<void> _pickAvatarFromGallery() async {
+    final x = await _picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+      maxWidth: 1024,
+    );
+    if (x == null) return;
+    await AuthService.updateAvatar(x.path);
+    if (!mounted) return;
+    setState(() => _avatarPath = x.path);
   }
 
   @override
@@ -78,13 +96,18 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     CircleAvatar(
                       radius: 56,
                       backgroundColor: AppTheme.primaryLight,
-                      child: Icon(Icons.person, size: 64, color: Colors.white.withOpacity(0.9)),
+                      backgroundImage: (_avatarPath != null && File(_avatarPath!).existsSync())
+                          ? FileImage(File(_avatarPath!))
+                          : null,
+                      child: (_avatarPath == null || !File(_avatarPath!).existsSync())
+                          ? Icon(Icons.person, size: 64, color: Colors.white.withValues(alpha: 0.9))
+                          : null,
                     ),
                     Positioned(
                       right: 0,
                       bottom: 0,
                       child: GestureDetector(
-                        onTap: () {},
+                        onTap: _pickAvatarFromGallery,
                         child: Container(
                           padding: const EdgeInsets.all(10),
                           decoration: const BoxDecoration(

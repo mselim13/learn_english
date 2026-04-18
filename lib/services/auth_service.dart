@@ -1,3 +1,7 @@
+import 'dart:io';
+
+import 'package:path_provider/path_provider.dart';
+
 import 'app_prefs.dart';
 import 'profile_notifier.dart';
 
@@ -149,9 +153,30 @@ class AuthService {
 
   /// Sadece avatarı güncelle.
   static Future<void> updateAvatar(String? path) async {
-    await AppPrefs.setAvatarPath(path);
+    if (path == null || path.trim().isEmpty) {
+      await AppPrefs.setAvatarPath(null);
+      final current = profileNotifier.value ?? await loadProfileFromPrefs();
+      updateProfileNotifier(current.copyWith(avatarPath: null));
+      return;
+    }
+
+    final src = File(path);
+    if (!await src.exists()) {
+      throw StateError('Selected image file not found.');
+    }
+
+    final dir = await getApplicationDocumentsDirectory();
+    final avatarDir = Directory('${dir.path}/profile');
+    if (!await avatarDir.exists()) {
+      await avatarDir.create(recursive: true);
+    }
+
+    final dst = File('${avatarDir.path}/avatar.jpg');
+    await src.copy(dst.path);
+
+    await AppPrefs.setAvatarPath(dst.path);
     final current = profileNotifier.value ?? await loadProfileFromPrefs();
-    updateProfileNotifier(current.copyWith(avatarPath: path));
+    updateProfileNotifier(current.copyWith(avatarPath: dst.path));
   }
 }
 

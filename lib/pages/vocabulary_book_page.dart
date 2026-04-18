@@ -7,7 +7,9 @@ import '../theme/app_theme.dart';
 import '../utils/responsive.dart';
 
 class VocabularyBookPage extends StatefulWidget {
-  const VocabularyBookPage({super.key});
+  const VocabularyBookPage({super.key, this.onExposeRefresh});
+
+  final void Function(Future<void> Function())? onExposeRefresh;
 
   @override
   State<VocabularyBookPage> createState() => _VocabularyBookPageState();
@@ -22,6 +24,7 @@ class _VocabularyBookPageState extends State<VocabularyBookPage> {
   void initState() {
     super.initState();
     _loadWords();
+    widget.onExposeRefresh?.call(_loadWords);
   }
 
   Future<void> _loadWords() async {
@@ -245,7 +248,7 @@ class _VocabularyBookPageState extends State<VocabularyBookPage> {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
+                      color: Colors.black.withValues(alpha: 0.04),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -330,7 +333,7 @@ class _VocabularyBookPageState extends State<VocabularyBookPage> {
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.03),
+                              color: Colors.black.withValues(alpha: 0.03),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
                             ),
@@ -340,7 +343,7 @@ class _VocabularyBookPageState extends State<VocabularyBookPage> {
                           children: [
                             CircleAvatar(
                               radius: Responsive.iconSizeSmall(context),
-                              backgroundColor: AppTheme.primaryLight.withOpacity(0.2),
+                              backgroundColor: AppTheme.primaryLight.withValues(alpha: 0.2),
                               child: Text(
                                 (w['word']!.isNotEmpty ? w['word']![0] : '?')
                                     .toUpperCase(),
