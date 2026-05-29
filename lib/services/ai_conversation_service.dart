@@ -1,10 +1,11 @@
+import 'gemini_service.dart';
 import 'local_english_partner.dart';
-import 'offline_llama_service.dart';
 
-/// Offline English chat.
+/// İngilizce konuşma asistanı.
 ///
-/// - If a local GGUF model exists: uses llama.cpp via [OfflineLlamaService]
-/// - Otherwise: uses lightweight on-device templates via [LocalEnglishPartner]
+/// Öncelik sırası:
+///   1. Gemini API (backend proxy — bulut)
+///   2. Şablon tabanlı yerel yanıtlar (internet yoksa yedek)
 class AiConversationService {
   AiConversationService._();
 
@@ -19,27 +20,24 @@ Rules:
 - If the user writes in Turkish, respond in simple, friendly English and keep it short.
 - Stay concise unless the user asks for more detail.''';
 
-  /// [backend]: `llama` | `local`
-  static Future<({String text, String backend})> completeWithSource(
+  /// Kullanılan backend bilgisini de döndürür: 'gemini' | 'local'
+  /// [failReason] Gemini başarısız olduğunda sebebi taşır.
+  static Future<({String text, String backend, String? failReason})> completeWithSource(
     List<Map<String, String>> messages,
   ) async {
+    // 1. Gemini API (bulut)
+    final geminiResult = await GeminiService.chatWithReason(messages);
+    if (geminiResult.text != null && geminiResult.text!.isNotEmpty) {
+      return (text: geminiResult.text!, backend: 'gemini', failReason: null);
+    }
+
+    // 2. Şablon yanıtlar (Gemini ulaşılamaz ise yedek)
     final withSystem = [
       {'role': 'system', 'content': systemPrompt},
       ...messages,
     ];
-
-    final hasModel = await OfflineLlamaService.hasLocalModelFile();
-    if (hasModel) {
-      try {
-        final text = await OfflineLlamaService.generate(withSystem);
-        if (text.isNotEmpty) return (text: text, backend: 'llama');
-      } catch (_) {
-        // fall through
-      }
-    }
-
     final text = LocalEnglishPartner.generateReply(withSystem);
-    return (text: text, backend: 'local');
+    return (text: text, backend: 'local', failReason: geminiResult.failReason);
   }
 
   static Future<String> complete(List<Map<String, String>> messages) async {

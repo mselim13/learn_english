@@ -24,7 +24,7 @@ class LevelRoadmapPage extends StatelessWidget {
       body: FutureBuilder<String>(
         future: AppPrefs.getUserLevel(),
         builder: (context, snap) {
-          final currentLevel = snap.data ?? 'A2';
+          final currentLevel = snap.data ?? 'A1';
           const order = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
           final currentIdx = order.indexOf(currentLevel);
 

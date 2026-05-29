@@ -126,20 +126,14 @@ class _RegisterPageState extends State<RegisterPage> {
 
                       if (!result.success) {
                         if (!mounted) return;
-                        String message;
-                        switch (result.error) {
-                          case RegisterError.emptyName:
-                            message = 'Lütfen Ad Soyad girin.';
-                            break;
-                          case RegisterError.emptyEmail:
-                            message = 'Lütfen e-posta adresinizi girin.';
-                            break;
-                          case RegisterError.weakPassword:
-                            message = 'Parola en az 6 karakter olmalıdır.';
-                            break;
-                          default:
-                            message = 'Kayıt işlemi tamamlanamadı.';
-                        }
+                        final message = switch (result.error) {
+                          RegisterError.emptyName => 'Lütfen Ad Soyad girin.',
+                          RegisterError.emptyEmail => 'Lütfen e-posta adresinizi girin.',
+                          RegisterError.weakPassword => 'Parola en az 6 karakter olmalıdır.',
+                          RegisterError.emailAlreadyInUse => 'Bu e-posta adresi zaten kayıtlı.',
+                          RegisterError.networkError => 'Sunucuya bağlanılamadı. İnternet bağlantınızı kontrol edin.',
+                          _ => 'Kayıt işlemi tamamlanamadı.',
+                        };
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text(message)),
                         );

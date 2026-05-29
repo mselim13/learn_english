@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'api_service.dart';
 import 'app_prefs.dart';
 import 'vocabulary_book_service.dart';
 
@@ -31,6 +33,7 @@ class StatsSnapshot {
     required this.streakDays,
     required this.skills,
     required this.badges,
+    required this.activityBreakdown,
   });
 
   final StatsPeriod period;
@@ -61,6 +64,9 @@ class StatsSnapshot {
 
   /// badgeId -> unlocked
   final Map<String, bool> badges;
+
+  /// Bu haftaki aktivite bazlı dakikalar (sadece > 0 olanlar).
+  final Map<LearningActivity, int> activityBreakdown;
 }
 
 class StatsStore {
@@ -75,6 +81,10 @@ class StatsStore {
   static const _kStreakCount = 'stats.streak.count';
 
   static const _kListeningTotalMinutes = 'stats.totalMinutes.listening';
+
+  /// Günlük aktiviteye göre dakika kaydı: stats.activity.{name}.{yyyymmdd}
+  static String _kActivityDay(LearningActivity a, int d) =>
+      'stats.activity.${a.name}.$d';
 
   static const _kSkillVocabulary = 'stats.skill.vocabulary.bps';
   static const _kSkillListening = 'stats.skill.listening.bps';
@@ -120,27 +130,136 @@ class StatsStore {
     DateTime? now,
   }) async {
     final n = now ?? DateTime.now();
-    final dayKey = _kStudyMinutesDay(yyyymmdd(n));
+    final day = yyyymmdd(n);
+    final dayKey = _kStudyMinutesDay(day);
 
     final p = await _prefs;
     final current = p.getInt(dayKey) ?? 0;
     final next = current + _posInt(minutes);
     await p.setInt(dayKey, next);
 
-    // Activity totals used for badges
+    // Aktiviteye göre ayrıntılı dakika takibi
+    final actKey = _kActivityDay(activity, day);
+    await p.setInt(actKey, (p.getInt(actKey) ?? 0) + _posInt(minutes));
+
     if (activity == LearningActivity.listening) {
       final lt = p.getInt(_kListeningTotalMinutes) ?? 0;
       await p.setInt(_kListeningTotalMinutes, lt + _posInt(minutes));
     }
 
-    // Update streak when daily minutes crosses threshold.
     await _maybeUpdateStreak(p, n);
-
-    // Apply small skill increments
     await bumpSkill(activity, minutes: minutes, now: n);
-
-    // Badges can depend on multiple sources; recompute after updates.
     await recomputeBadges();
+
+    // Backend'e çalışma seansını ve skill puanlarını asenkron olarak bildir.
+    _syncStudyToBackend(day: day, minutes: _posInt(minutes));
+    _syncSkillsToBackend();
+  }
+
+  /// Backend'den istatistikleri çekip yerel önbelleğe yazar.
+  /// Hata olursa sessizce geçer (yerel veri korunur).
+  static Future<void> syncFromBackend() async {
+    try {
+      final res = await ApiService.get('/stats');
+      if (res.statusCode != 200) return;
+      final body = jsonDecode(res.body) as Map<String, dynamic>;
+      final stats = body['stats'] as Map<String, dynamic>?;
+      if (stats == null) return;
+
+      final p = await _prefs;
+
+      // Günlük dakikalar
+      final daily = stats['dailyMinutes'] as List<dynamic>?;
+      if (daily != null) {
+        for (final entry in daily) {
+          final e = entry as Map<String, dynamic>;
+          final date = (e['date'] as num).toInt();
+          final mins = (e['minutes'] as num).toInt();
+          await p.setInt(_kStudyMinutesDay(date), mins);
+        }
+      }
+
+      // Streak
+      final streak = stats['streak'] as Map<String, dynamic>?;
+      if (streak != null) {
+        final lastDay = streak['lastDay'] as num?;
+        final count = streak['count'] as num?;
+        if (lastDay != null) await p.setInt(_kStreakLastDay, lastDay.toInt());
+        if (count != null) await p.setInt(_kStreakCount, count.toInt());
+      }
+
+      // Skill puanları (basis points)
+      final skills = stats['skills'] as Map<String, dynamic>?;
+      if (skills != null) {
+        final vocab = skills['vocabulary'] as num?;
+        final listening = skills['listening'] as num?;
+        final speaking = skills['speaking'] as num?;
+        final writing = skills['writing'] as num?;
+        if (vocab != null) await p.setInt(_kSkillVocabulary, vocab.toInt());
+        if (listening != null) await p.setInt(_kSkillListening, listening.toInt());
+        if (speaking != null) await p.setInt(_kSkillSpeaking, speaking.toInt());
+        if (writing != null) await p.setInt(_kSkillWriting, writing.toInt());
+      }
+
+      // Level ilerleme
+      final levelProgress = stats['levelProgress'] as Map<String, dynamic>?;
+      if (levelProgress != null) {
+        for (final e in levelProgress.entries) {
+          await p.setInt(_kLevelProgress(e.key), (e.value as num).toInt());
+        }
+      }
+
+      // Rozetler
+      final badges = stats['badges'] as Map<String, dynamic>?;
+      if (badges != null) {
+        for (final e in badges.entries) {
+          await p.setBool(_kBadge(e.key), e.value as bool? ?? false);
+        }
+      }
+
+      // Diğer alanlar
+      final listeningTotal = stats['listeningTotalMinutes'] as num?;
+      if (listeningTotal != null) {
+        await p.setInt(_kListeningTotalMinutes, listeningTotal.toInt());
+      }
+      final weeklyGoal = stats['weeklyGoalMinutes'] as num?;
+      if (weeklyGoal != null) {
+        await p.setInt(_kWeeklyGoalMinutes, weeklyGoal.toInt());
+      }
+    } catch (_) {}
+  }
+
+  static void _syncStudyToBackend({required int day, required int minutes}) {
+    if (minutes <= 0) return;
+    // Fire-and-forget: yerel önce güncellendi, backend sync arka planda.
+    Future(() async {
+      try {
+        await ApiService.post('/stats/study', {'date': day, 'minutes': minutes});
+      } catch (_) {}
+    });
+  }
+
+  /// Skill puanlarını, streak'i ve dinleme toplamını backend'e gönderir.
+  /// Fire-and-forget — hata olsa da yerel veriler korunur.
+  static void _syncSkillsToBackend() {
+    Future(() async {
+      try {
+        final p = await _prefs;
+        await ApiService.put('/stats', {
+          'skills': {
+            'vocabulary': p.getInt(_kSkillVocabulary) ?? 0,
+            'listening': p.getInt(_kSkillListening) ?? 0,
+            'speaking': p.getInt(_kSkillSpeaking) ?? 0,
+            'writing': p.getInt(_kSkillWriting) ?? 0,
+          },
+          'streak': {
+            'lastDay': p.getInt(_kStreakLastDay),
+            'count': p.getInt(_kStreakCount) ?? 0,
+          },
+          'listeningTotalMinutes': p.getInt(_kListeningTotalMinutes) ?? 0,
+        });
+      } catch (_) {}
+    });
   }
 
   static Future<void> _maybeUpdateStreak(SharedPreferences p, DateTime now) async {
@@ -172,6 +291,27 @@ class StatsStore {
     }
   }
 
+  /// Eski hardcoded skill default'larını (3500/3000/2500/2500) yerel önbellekten siler.
+  /// Backend migration ile eşleşir; uygulama ilk açılışında bir kez çağrılır.
+  static Future<void> clearOldSkillDefaults() async {
+    const oldVocab = 3500;
+    const oldListen = 3000;
+    const oldSpeak = 2500;
+    const oldWrite = 2500;
+    final p = await _prefs;
+    final v = p.getInt(_kSkillVocabulary) ?? 0;
+    final l = p.getInt(_kSkillListening) ?? 0;
+    final s = p.getInt(_kSkillSpeaking) ?? 0;
+    final w = p.getInt(_kSkillWriting) ?? 0;
+    // Yalnızca tam olarak eski default değerlere eşitse sıfırla.
+    if (v == oldVocab && l == oldListen && s == oldSpeak && w == oldWrite) {
+      await p.setInt(_kSkillVocabulary, 0);
+      await p.setInt(_kSkillListening, 0);
+      await p.setInt(_kSkillSpeaking, 0);
+      await p.setInt(_kSkillWriting, 0);
+    }
+  }
+
   static Future<int> getStreakDays() async {
     final p = await _prefs;
     return p.getInt(_kStreakCount) ?? 0;
@@ -179,15 +319,30 @@ class StatsStore {
 
   static Future<Map<String, double>> getSkills() async {
     final p = await _prefs;
-    double readBps(String key, double fallback) =>
-        ((p.getInt(key) ?? (fallback * 10000).round()) / 10000.0)
-            .clamp(0.0, 1.0);
+
+    // Eski hardcoded default'ları (3500/3000/2500/2500) veya herhangi bir
+    // kombinasyonunu anında sıfırla — backend restart beklemeye gerek yok.
+    // Eski hardcoded default'ları (3500/3000/2500/2500) anında sıfırla.
+    final isOldSeed =
+        p.getInt(_kSkillVocabulary) == 3500 &&
+        p.getInt(_kSkillListening)  == 3000 &&
+        p.getInt(_kSkillSpeaking)   == 2500 &&
+        p.getInt(_kSkillWriting)    == 2500;
+    if (isOldSeed) {
+      await p.setInt(_kSkillVocabulary, 0);
+      await p.setInt(_kSkillListening,  0);
+      await p.setInt(_kSkillSpeaking,   0);
+      await p.setInt(_kSkillWriting,    0);
+    }
+
+    double readBps(String key) =>
+        ((p.getInt(key) ?? 0) / 10000.0).clamp(0.0, 1.0);
 
     return {
-      'Vocabulary': readBps(_kSkillVocabulary, 0.35),
-      'Listening': readBps(_kSkillListening, 0.30),
-      'Speaking': readBps(_kSkillSpeaking, 0.25),
-      'Writing': readBps(_kSkillWriting, 0.25),
+      'Vocabulary': readBps(_kSkillVocabulary),
+      'Listening':  readBps(_kSkillListening),
+      'Speaking':   readBps(_kSkillSpeaking),
+      'Writing':    readBps(_kSkillWriting),
     };
   }
 
@@ -254,6 +409,49 @@ class StatsStore {
     final idx = order.indexOf(level);
     if (idx < 0 || idx >= order.length - 1) return level;
     return order[idx + 1];
+  }
+
+  /// Bu haftaki (Pzt–Paz) aktivite bazlı dakikalar.
+  static Future<Map<LearningActivity, int>> getActivityBreakdownThisWeek({
+    DateTime? now,
+  }) async {
+    final n = now ?? DateTime.now();
+    final startOfWeek = _startOfDay(n.subtract(Duration(days: n.weekday - 1)));
+    final p = await _prefs;
+    final result = <LearningActivity, int>{};
+    for (final activity in LearningActivity.values) {
+      var sum = 0;
+      for (var i = 0; i < 7; i++) {
+        final d = yyyymmdd(startOfWeek.add(Duration(days: i)));
+        sum += p.getInt(_kActivityDay(activity, d)) ?? 0;
+      }
+      if (sum > 0) result[activity] = sum;
+    }
+    return result;
+  }
+
+  /// Son 30 günde çalışma yapıldı mı? (en eskiden en yeniye).
+  static Future<List<bool>> getDailyStudyLast30({DateTime? now}) async {
+    final n = now ?? DateTime.now();
+    final p = await _prefs;
+    final result = <bool>[];
+    for (var i = 29; i >= 0; i--) {
+      final d = _startOfDay(n).subtract(Duration(days: i));
+      final mins = p.getInt(_kStudyMinutesDay(yyyymmdd(d))) ?? 0;
+      result.add(mins > 0);
+    }
+    return result;
+  }
+
+  /// Bu haftanın (Pzt–Paz) her günü için dakika listesi (7 eleman).
+  static Future<List<int>> getDailyMinutesThisWeek({DateTime? now}) async {
+    final n = now ?? DateTime.now();
+    final startOfWeek = _startOfDay(n.subtract(Duration(days: n.weekday - 1)));
+    final out = <int>[];
+    for (var i = 0; i < 7; i++) {
+      out.add(await getStudyMinutesForDay(startOfWeek.add(Duration(days: i))));
+    }
+    return out;
   }
 
   static Future<int> getCurrentWeeklyMinutes({DateTime? now}) async {
@@ -383,13 +581,16 @@ class StatsStore {
   static Future<StatsSnapshot> getSnapshot(
     StatsPeriod period, {
     DateTime? now,
+    bool syncFirst = false,
   }) async {
+    if (syncFirst) await syncFromBackend();
     final n = now ?? DateTime.now();
     final level = await AppPrefs.getUserLevel();
     final nextLevel = nextLevelFor(level);
     final levelProgress = await getLevelProgress(level);
     final skills = await getSkills();
     final streakDays = await getStreakDays();
+    final activityBreakdown = await getActivityBreakdownThisWeek(now: n);
 
     final weeklyGoalMinutes = await getWeeklyGoalMinutes();
     final currentWeeklyMinutes = await getCurrentWeeklyMinutes(now: n);
@@ -420,6 +621,7 @@ class StatsStore {
       streakDays: streakDays,
       skills: skills,
       badges: badges,
+      activityBreakdown: activityBreakdown,
     );
   }
 }

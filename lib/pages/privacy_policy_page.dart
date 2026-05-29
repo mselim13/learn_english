@@ -9,22 +9,22 @@ class PrivacyPolicyPage extends StatelessWidget {
   static const String _text = '''
 Gizlilik Politikası
 
-Son güncelleme: 2024
+Son güncelleme: 2026
 
 1. Toplanan veriler
-Uygulama kullanımı sırasında hesap bilgileriniz, öğrenme ilerlemeniz ve cihaz bilgileri toplanabilir.
+Profil bilgileriniz (ad, e-posta), öğrenme ilerlemeniz, uygulama tercihleri ve cihazınızda üretilen kullanım verileri uygulama tarafından işlenebilir.
 
 2. Veri kullanımı
-Verileriniz yalnızca hizmeti iyileştirmek, kişiselleştirmek ve size öneriler sunmak için kullanılır.
+Verileriniz yalnızca uygulama özelliklerini sunmak (istatistik, hatırlatma, kişiselleştirme) için kullanılır.
 
 3. Veri paylaşımı
-Kişisel verileriniz üçüncü taraflarla satılmaz. Yasal zorunluluklar dışında paylaşılmaz.
+Bu sürümde verileriniz uygulama içinde yerel olarak tutulur; kişisel verileriniz üçüncü taraflara satılmaz. İleride isteğe bağlı bulut veya analiz hizmetleri eklenirse bu metin güncellenir.
 
-4. Güvenlik
-Verileriniz şifreli ve güvenli sunucularda saklanır.
+4. Saklama ve güvenlik
+Öğrenme verileriniz ve hesap bilgileriniz öncelikle cihazınızda (yerel) saklanır. Cihaz güvenliği ve ekran kilidi sizin sorumluluğunuzdadır.
 
 5. Haklarınız
-Verilerinize erişim, düzeltme veya silme talebinde bulunabilirsiniz.
+Ayarlar üzerinden hesabınızı sildiğinizde yerel veriler silinir. Erişim ve düzeltme talepleri için iletişim adresini kullanabilirsiniz.
 
 İletişim: privacy@learnenglish.app
 ''';

@@ -320,6 +320,7 @@ class _VocabularyBookPageState extends State<VocabularyBookPage> {
                               word: w['word']!,
                               meaning: w['meaning']!,
                               example: w['example'] ?? '',
+                              exampleTr: w['exampleTr'] ?? '',
                               vocabularyEntryId: w['id'],
                             ),
                           ),

@@ -13,11 +13,13 @@ class WordDetailPage extends StatefulWidget {
     required this.word,
     required this.meaning,
     required this.example,
+    this.exampleTr = '',
     this.vocabularyEntryId,
   });
   final String word;
   final String meaning;
   final String example;
+  final String exampleTr;
 
   /// Kelime defterinden açıldıysa dolu; "Öğrendim" bu kaydı siler.
   final String? vocabularyEntryId;
@@ -109,6 +111,7 @@ class _WordDetailPageState extends State<WordDetailPage> {
     final exampleText = widget.example.trim().isEmpty
         ? 'Henüz örnek cümle eklenmedi.'
         : widget.example;
+    final exampleTrText = widget.exampleTr.trim();
 
     return Scaffold(
       backgroundColor: AppTheme.surface,
@@ -179,15 +182,30 @@ class _WordDetailPageState extends State<WordDetailPage> {
                       width: double.infinity,
                       padding: EdgeInsets.all(Responsive.cardPadding(context)),
                       decoration: AppTheme.cardDecorationFor(context),
-                      child: Text(
-                        exampleText,
-                        style: TextStyle(
-                          fontSize: Responsive.fontSizeBody(context),
-                          fontStyle: widget.example.trim().isEmpty
-                              ? FontStyle.normal
-                              : FontStyle.italic,
-                          color: Colors.grey.shade800,
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            exampleText,
+                            style: TextStyle(
+                              fontSize: Responsive.fontSizeBody(context),
+                              fontStyle: widget.example.trim().isEmpty
+                                  ? FontStyle.normal
+                                  : FontStyle.italic,
+                              color: Colors.grey.shade800,
+                            ),
+                          ),
+                          if (exampleTrText.isNotEmpty) ...[
+                            SizedBox(height: Responsive.gapSm(context)),
+                            Text(
+                              exampleTrText,
+                              style: TextStyle(
+                                fontSize: Responsive.fontSizeBodySmall(context),
+                                color: Colors.grey.shade500,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
                     SizedBox(height: Responsive.gapLg(context)),

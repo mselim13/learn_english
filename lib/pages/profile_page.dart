@@ -47,8 +47,6 @@ class ProfilePage extends StatelessWidget {
               SizedBox(height: Responsive.gapLg(context)),
               _buildProfileCard(context),
               SizedBox(height: Responsive.gapMd(context)),
-              _buildStatsRow(context),
-              SizedBox(height: Responsive.gapLg(context)),
               _buildSectionTitle(context, 'Hesap'),
               SizedBox(height: Responsive.gapSm(context)),
               _buildOptionCard(
@@ -369,8 +367,6 @@ class ProfilePage extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             _buildStatItem(context, Icons.menu_book_outlined, '250', 'Kelime'),
-            const VerticalDivider(thickness: 1, color: Colors.grey),
-            _buildStatItem(context, Icons.trending_up, 'A2', 'Seviye'),
             const VerticalDivider(thickness: 1, color: Colors.grey),
             _buildStatItem(context, Icons.workspace_premium_outlined, '4', 'Rozet'),
           ],

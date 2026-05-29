@@ -9,10 +9,10 @@ class TermsPage extends StatelessWidget {
   static const String _text = '''
 Kullanım Koşulları
 
-Son güncelleme: 2024
+Son güncelleme: 2026
 
 1. Hizmetin kullanımı
-Learn English uygulamasını yalnızca yasal ve uygun şekilde kullanmayı kabul edersiniz.
+İngilizce Öğren uygulamasını yalnızca yasal ve uygun şekilde kullanmayı kabul edersiniz.
 
 2. Hesap sorumluluğu
 Hesap bilgilerinizin güvenliğinden siz sorumlusunuz.

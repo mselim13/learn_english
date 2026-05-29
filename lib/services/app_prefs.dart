@@ -17,6 +17,9 @@ class AppPrefs {
   static const _keyNotificationsEnabled = 'notifications_enabled';
   static const _keyDailyReminderEnabled = 'notifications_daily_reminder_enabled';
   static const _keyDailyReminderTimeMinutes = 'notifications_daily_reminder_time_minutes';
+  static const _keySoundEffectsEnabled = 'sound_effects_enabled';
+  static const _keyAccessToken = 'auth_access_token';
+  static const _keyRefreshToken = 'auth_refresh_token';
 
   static Future<SharedPreferences> get _prefs async =>
       await SharedPreferences.getInstance();
@@ -220,6 +223,53 @@ class AppPrefs {
     final loggedIn = await getLoggedIn();
     if (!loggedIn) return false;
     return hasRegisteredUser();
+  }
+
+  /// Quiz ve benzeri ekranlarda doğru/yanlış geri bildirimi (varsayılan: açık).
+  static Future<bool> getSoundEffectsEnabled() async {
+    final p = await _prefs;
+    return p.getBool(_keySoundEffectsEnabled) ?? true;
+  }
+
+  static Future<void> setSoundEffectsEnabled(bool value) async {
+    final p = await _prefs;
+    await p.setBool(_keySoundEffectsEnabled, value);
+  }
+
+  // --- JWT Token Yönetimi ---
+
+  static Future<String?> getAccessToken() async {
+    final p = await _prefs;
+    return p.getString(_keyAccessToken);
+  }
+
+  static Future<void> setAccessToken(String? value) async {
+    final p = await _prefs;
+    if (value == null) {
+      await p.remove(_keyAccessToken);
+    } else {
+      await p.setString(_keyAccessToken, value);
+    }
+  }
+
+  static Future<String?> getRefreshToken() async {
+    final p = await _prefs;
+    return p.getString(_keyRefreshToken);
+  }
+
+  static Future<void> setRefreshToken(String? value) async {
+    final p = await _prefs;
+    if (value == null) {
+      await p.remove(_keyRefreshToken);
+    } else {
+      await p.setString(_keyRefreshToken, value);
+    }
+  }
+
+  /// Tüm yerel tercihleri temizler (hesap silme / tam çıkış).
+  static Future<void> clearAll() async {
+    final p = await _prefs;
+    await p.clear();
   }
 
 }

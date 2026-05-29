@@ -1,9 +1,16 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/painting.dart';
+import 'package:path_provider/path_provider.dart';
+import '../services/app_prefs.dart';
+import '../services/auth_service.dart';
 import '../utils/responsive.dart';
 import 'about_page.dart';
 import 'terms_page.dart';
 import 'privacy_policy_page.dart';
 import 'change_password_page.dart';
+import 'welcome_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -22,6 +29,12 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   void initState() {
     super.initState();
+    _loadSoundPreference();
+  }
+
+  Future<void> _loadSoundPreference() async {
+    final v = await AppPrefs.getSoundEffectsEnabled();
+    if (mounted) setState(() => _soundEnabled = v);
   }
 
   @override
@@ -58,14 +71,6 @@ class _SettingsPageState extends State<SettingsPage> {
               SizedBox(height: gapSm),
               _buildOptionCard(
                 context,
-                icon: Icons.security,
-                title: 'Gizlilik ayarları',
-                subtitle: 'Veri paylaşımı, reklamlar',
-                onTap: () {},
-              ),
-              SizedBox(height: gapSm),
-              _buildOptionCard(
-                context,
                 icon: Icons.storage_outlined,
                 title: 'Önbellek ve veri',
                 subtitle: 'Önbelleği temizle',
@@ -79,7 +84,10 @@ class _SettingsPageState extends State<SettingsPage> {
                 title: 'Ses efektleri',
                 subtitle: 'Doğru/yanlış sesleri',
                 value: _soundEnabled,
-                onChanged: (v) => setState(() => _soundEnabled = v),
+                onChanged: (v) async {
+                  setState(() => _soundEnabled = v);
+                  await AppPrefs.setSoundEffectsEnabled(v);
+                },
               ),
               SizedBox(height: gapLg),
               _buildSectionTitle('Hakkında'),
@@ -326,11 +334,13 @@ class _SettingsPageState extends State<SettingsPage> {
             child: Text('İptal', style: TextStyle(color: Colors.grey.shade700)),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx);
+              await _clearTemporaryCache();
+              if (!context.mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Önbellek temizlendi'),
+                  content: Text('Geçici dosyalar temizlendi'),
                   behavior: SnackBarBehavior.floating,
                 ),
               );
@@ -349,7 +359,7 @@ class _SettingsPageState extends State<SettingsPage> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Emin misiniz?'),
         content: const Text(
-          'Hesabınız kalıcı olarak silinecektir. Bu işlem geri alınamaz.',
+          'Tüm yerel verileriniz (profil, istatistik, kelime defteri) silinir ve oturum kapanır. Bu işlem geri alınamaz.',
         ),
         actions: [
           TextButton(
@@ -357,14 +367,37 @@ class _SettingsPageState extends State<SettingsPage> {
             child: Text('İptal', style: TextStyle(color: Colors.grey.shade700)),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx);
-              // Hesap silme işlemi ileride eklenecek
+              await AuthService.deleteAllLocalDataAndSignOut();
+              if (!context.mounted) return;
+              Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const WelcomePage()),
+                (_) => false,
+              );
             },
             child: const Text('Sil', style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _clearTemporaryCache() async {
+    try {
+      final dir = await getTemporaryDirectory();
+      await for (final entity in dir.list()) {
+        try {
+          if (entity is File) {
+            await entity.delete();
+          } else if (entity is Directory) {
+            await entity.delete(recursive: true);
+          }
+        } catch (_) {}
+      }
+      final cache = PaintingBinding.instance.imageCache;
+      cache.clear();
+      cache.clearLiveImages();
+    } catch (_) {}
   }
 }

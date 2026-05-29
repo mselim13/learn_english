@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 import '../utils/responsive.dart';
-import 'badges_page.dart';
 import '../services/stats_store.dart';
 
 enum _Period { daily, weekly, monthly }
 
 class StatsPage extends StatefulWidget {
-  const StatsPage({super.key});
+  const StatsPage({
+    super.key,
+    this.onExposeReload,
+  });
+
+  /// Çağrıldığında istatistikleri arka planda backend'den yenileyip
+  /// UI'ı günceller. [MainNavigationPage] tab seçilince bunu çağırır.
+  final void Function(VoidCallback reload)? onExposeReload;
 
   @override
   State<StatsPage> createState() => _StatsPageState();
@@ -14,12 +20,39 @@ class StatsPage extends StatefulWidget {
 
 class _StatsPageState extends State<StatsPage> {
   _Period _period = _Period.weekly;
+  late Future<StatsSnapshot> _future;
 
   StatsPeriod _toStatsPeriod(_Period p) => switch (p) {
         _Period.daily => StatsPeriod.daily,
         _Period.weekly => StatsPeriod.weekly,
         _Period.monthly => StatsPeriod.monthly,
       };
+
+  @override
+  void initState() {
+    super.initState();
+    _future = StatsStore.getSnapshot(_toStatsPeriod(_period));
+    widget.onExposeReload?.call(_reloadFromServer);
+  }
+
+  void _reload({_Period? period, bool syncFromServer = false}) {
+    final p = period ?? _period;
+    setState(() {
+      _period = p;
+      _future = StatsStore.getSnapshot(
+        _toStatsPeriod(p),
+        syncFirst: syncFromServer,
+      );
+    });
+  }
+
+  /// Önce önbellekteki veriyi göster, arka planda backend'den çek ve güncelle.
+  void _reloadFromServer() {
+    _reload();
+    StatsStore.syncFromBackend().then((_) {
+      if (mounted) _reload();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,46 +65,48 @@ class _StatsPageState extends State<StatsPage> {
               maxWidth: Responsive.maxContentWidth(context),
             ),
             child: FutureBuilder<StatsSnapshot>(
-              future: StatsStore.getSnapshot(_toStatsPeriod(_period)),
+              future: _future,
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
                   return const Center(child: CircularProgressIndicator());
                 }
                 final s = snapshot.data!;
-                return SingleChildScrollView(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: Responsive.horizontalPadding(context),
-                    vertical: Responsive.verticalPadding(context),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildHeader(context),
-                      SizedBox(height: Responsive.gapMd(context)),
-                      _buildBarChartCard(context, s),
-                      SizedBox(height: Responsive.gapMd(context)),
-                      _buildWeeklyGoalCard(context, s),
-                      SizedBox(height: Responsive.gapMd(context)),
-                      _buildLevelProgressCard(context, s),
-                      SizedBox(height: Responsive.gapMd(context)),
-                      IntrinsicHeight(
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Expanded(child: _buildLearningTimeCard(context, s)),
-                            SizedBox(width: Responsive.gapSm(context)),
-                            Expanded(child: _buildSkillMasterCard(context, s)),
-                          ],
+                return RefreshIndicator(
+                  onRefresh: () async => _reload(syncFromServer: true),
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: Responsive.horizontalPadding(context),
+                      vertical: Responsive.verticalPadding(context),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildHeader(context),
+                        SizedBox(height: Responsive.gapMd(context)),
+                        _buildBarChartCard(context, s),
+                        SizedBox(height: Responsive.gapMd(context)),
+                        _buildWeeklyGoalCard(context, s),
+                        SizedBox(height: Responsive.gapMd(context)),
+                        _buildLevelProgressCard(context, s),
+                        SizedBox(height: Responsive.gapMd(context)),
+                        IntrinsicHeight(
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Expanded(child: _buildLearningTimeCard(context, s)),
+                              SizedBox(width: Responsive.gapSm(context)),
+                              Expanded(child: _buildSkillMasterCard(context, s)),
+                            ],
+                          ),
                         ),
-                      ),
-                      SizedBox(height: Responsive.gapMd(context)),
-                      _buildStreakCard(context, s),
-                      SizedBox(height: Responsive.gapMd(context)),
-                      _buildWeeklySummaryCard(context, s),
-                      SizedBox(height: Responsive.gapMd(context)),
-                      _buildBadgesSection(context, s),
-                      SizedBox(height: Responsive.gapLg(context)),
-                    ],
+                        SizedBox(height: Responsive.gapMd(context)),
+                        _buildStreakCard(context, s),
+                        SizedBox(height: Responsive.gapMd(context)),
+                        _buildWeeklySummaryCard(context, s),
+                        SizedBox(height: Responsive.gapMd(context)),
+                      ],
+                    ),
                   ),
                 );
               },
@@ -81,6 +116,8 @@ class _StatsPageState extends State<StatsPage> {
       ),
     );
   }
+
+  // ── Header ───────────────────────────────────────────────────────
 
   Widget _buildHeader(BuildContext context) {
     return Row(
@@ -150,8 +187,8 @@ class _StatsPageState extends State<StatsPage> {
                           ),
                           selected: _period == p,
                           onTap: () {
-                            setState(() => _period = p);
                             Navigator.pop(ctx);
+                            _reload(period: p);
                           },
                         ),
                       ),
@@ -186,130 +223,15 @@ class _StatsPageState extends State<StatsPage> {
               ),
             ),
             SizedBox(width: Responsive.gapXs(context)),
-            Icon(Icons.keyboard_arrow_down, size: Responsive.iconSizeSmall(context), color: Colors.grey.shade700),
+            Icon(Icons.keyboard_arrow_down,
+                size: Responsive.iconSizeSmall(context), color: Colors.grey.shade700),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildWeeklyGoalCard(BuildContext context, StatsSnapshot s) {
-    final progress = s.weeklyGoalMinutes <= 0
-        ? 0.0
-        : (s.currentWeeklyMinutes / s.weeklyGoalMinutes).clamp(0.0, 1.0);
-    final hoursStr = _formatMinutes(s.currentWeeklyMinutes);
-    final goalStr = _formatMinutes(s.weeklyGoalMinutes);
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(Responsive.cardPadding(context)),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Bu hafta',
-                style: TextStyle(
-                  fontSize: Responsive.fontSizeBodySmall(context),
-                  color: Colors.grey.shade700,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              Text(
-                '$hoursStr / $goalStr',
-                style: TextStyle(
-                  fontSize: Responsive.fontSizeBodySmall(context),
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF4A148C),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: Responsive.gapSm(context)),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(Responsive.cardRadius(context) * 0.5),
-            child: LinearProgressIndicator(
-              value: progress,
-              minHeight: 10,
-              backgroundColor: const Color(0xFFD1BEEB).withOpacity(0.4),
-              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF7A3EC8)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLevelProgressCard(BuildContext context, StatsSnapshot s) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(Responsive.cardPadding(context)),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Seviye',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey.shade700,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              Text(
-                '${s.level} → ${s.nextLevel}',
-                style: TextStyle(
-                  fontSize: Responsive.fontSizeBody(context),
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF4A148C),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: LinearProgressIndicator(
-              value: s.levelProgress,
-              minHeight: 10,
-              backgroundColor: const Color(0xFFD1BEEB).withOpacity(0.4),
-              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF7A3EC8)),
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            '${(s.levelProgress * 100).toInt()}% ${s.nextLevel} seviyesine',
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-          ),
-        ],
-      ),
-    );
-  }
+  // ── Bar Chart ────────────────────────────────────────────────────
 
   Widget _buildBarChartCard(BuildContext context, StatsSnapshot s) {
     const double barAreaHeight = 160;
@@ -321,7 +243,6 @@ class _StatsPageState extends State<StatsPage> {
     final minutes = s.seriesMinutes;
     final heights = s.seriesHeights;
     final highlightIndex = s.highlightIndex;
-    final showHighlight = true;
     final barWidth = isDaily ? 28.0 : (isWeekly ? 36.0 : 32.0);
     final labelWidth = isDaily ? 28.0 : (isWeekly ? 72.0 : 40.0);
 
@@ -333,7 +254,7 @@ class _StatsPageState extends State<StatsPage> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -354,7 +275,7 @@ class _StatsPageState extends State<StatsPage> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (showHighlight && isHighlight)
+                    if (isHighlight)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 4),
                         child: Text(
@@ -366,14 +287,17 @@ class _StatsPageState extends State<StatsPage> {
                           ),
                         ),
                       ),
-                    Container(
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 500),
+                      curve: Curves.easeOut,
                       width: barWidth,
                       height: maxBarHeight * heights[i],
                       decoration: BoxDecoration(
                         color: isHighlight
                             ? const Color(0xFF7A3EC8)
                             : const Color(0xFFD7C4EA),
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+                        borderRadius:
+                            const BorderRadius.vertical(top: Radius.circular(8)),
                       ),
                     ),
                   ],
@@ -406,8 +330,117 @@ class _StatsPageState extends State<StatsPage> {
     );
   }
 
+  // ── Haftalık Hedef ───────────────────────────────────────────────
+
+  Widget _buildWeeklyGoalCard(BuildContext context, StatsSnapshot s) {
+    final progress = s.weeklyGoalMinutes <= 0
+        ? 0.0
+        : (s.currentWeeklyMinutes / s.weeklyGoalMinutes).clamp(0.0, 1.0);
+    final hoursStr = _formatMinutes(s.currentWeeklyMinutes);
+    final goalStr = _formatMinutes(s.weeklyGoalMinutes);
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(Responsive.cardPadding(context)),
+      decoration: _cardDeco(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Bu hafta',
+                style: TextStyle(
+                  fontSize: Responsive.fontSizeBodySmall(context),
+                  color: Colors.grey.shade700,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Text(
+                '$hoursStr / $goalStr',
+                style: TextStyle(
+                  fontSize: Responsive.fontSizeBodySmall(context),
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF4A148C),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: Responsive.gapSm(context)),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(Responsive.cardRadius(context) * 0.5),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 10,
+              backgroundColor: const Color(0xFFD1BEEB).withValues(alpha: 0.4),
+              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF7A3EC8)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Seviye ───────────────────────────────────────────────────────
+
+  Widget _buildLevelProgressCard(BuildContext context, StatsSnapshot s) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(Responsive.cardPadding(context)),
+      decoration: _cardDeco(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Seviye',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade700,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Text(
+                '${s.level} → ${s.nextLevel}',
+                style: TextStyle(
+                  fontSize: Responsive.fontSizeBody(context),
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF4A148C),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              value: s.levelProgress,
+              minHeight: 10,
+              backgroundColor: const Color(0xFFD1BEEB).withValues(alpha: 0.4),
+              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF7A3EC8)),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '${(s.levelProgress * 100).toInt()}% ${s.nextLevel} seviyesine',
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Öğrenme Süresi Kartı ─────────────────────────────────────────
+
   Widget _buildLearningTimeCard(BuildContext context, StatsSnapshot s) {
-    final weekly = _formatMinutes(s.currentWeeklyMinutes);
+    final timeStr = _formatMinutes(s.currentWeeklyMinutes);
+    final periodLabel = switch (_period) {
+      _Period.daily => 'Günlük öğrenme',
+      _Period.weekly => 'Haftalık öğrenme',
+      _Period.monthly => 'Aylık öğrenme',
+    };
     return GestureDetector(
       onTap: () => _showLearningTimeDetail(context),
       child: Container(
@@ -421,7 +454,7 @@ class _StatsPageState extends State<StatsPage> {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF7A3EC8).withOpacity(0.3),
+              color: const Color(0xFF7A3EC8).withValues(alpha: 0.3),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -432,20 +465,21 @@ class _StatsPageState extends State<StatsPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Icon(Icons.assignment_outlined, color: Colors.white.withOpacity(0.9), size: 28),
+            Icon(Icons.assignment_outlined,
+                color: Colors.white.withValues(alpha: 0.9), size: 28),
             const SizedBox(height: 10),
             Text(
-              'Haftalık öğrenme süresi',
+              periodLabel,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.white.withOpacity(0.9),
+                color: Colors.white.withValues(alpha: 0.9),
                 fontWeight: FontWeight.w500,
               ),
             ),
             const SizedBox(height: 6),
             Text(
-              weekly,
+              timeStr,
               style: const TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
@@ -458,6 +492,8 @@ class _StatsPageState extends State<StatsPage> {
     );
   }
 
+  // ── Yetenek Seviyeleri Kartı ─────────────────────────────────────
+
   Widget _buildSkillMasterCard(BuildContext context, StatsSnapshot s) {
     return GestureDetector(
       onTap: () => _showSkillMasterDetail(context, skills: s.skills),
@@ -468,7 +504,7 @@ class _StatsPageState extends State<StatsPage> {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF5B8DEE).withOpacity(0.3),
+              color: const Color(0xFF5B8DEE).withValues(alpha: 0.3),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -478,19 +514,26 @@ class _StatsPageState extends State<StatsPage> {
           mainAxisSize: MainAxisSize.max,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.rocket_launch_outlined, color: Colors.white.withOpacity(0.95), size: 28),
+            Icon(Icons.rocket_launch_outlined,
+                color: Colors.white.withValues(alpha: 0.95), size: 28),
             const SizedBox(height: 12),
             Text(
               'Yetenek Seviyeleri',
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.white.withOpacity(0.95),
+                color: Colors.white.withValues(alpha: 0.95),
                 fontWeight: FontWeight.w500,
               ),
             ),
             const SizedBox(height: 8),
             ...s.skills.entries.map((e) {
-              final short = e.key == 'Vocabulary' ? 'Voca' : e.key == 'Listening' ? 'Listen' : e.key == 'Speaking' ? 'Speak' : 'Write';
+              final short = switch (e.key) {
+                'Vocabulary' => 'Voca',
+                'Listening' => 'Listen',
+                'Speaking' => 'Speak',
+                _ => 'Write',
+              };
+              final pct = (e.value * 100).toInt();
               return Padding(
                 padding: const EdgeInsets.only(bottom: 6),
                 child: Row(
@@ -513,8 +556,18 @@ class _StatsPageState extends State<StatsPage> {
                           value: e.value,
                           minHeight: 6,
                           backgroundColor: Colors.white24,
-                          valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor:
+                              const AlwaysStoppedAnimation<Color>(Colors.white),
                         ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '$pct%',
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: Colors.white70,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
@@ -527,26 +580,20 @@ class _StatsPageState extends State<StatsPage> {
     );
   }
 
+  // ── Seri ─────────────────────────────────────────────────────────
+
   Widget _buildStreakCard(BuildContext context, StatsSnapshot s) {
     return GestureDetector(
       onTap: () => _showStreakDetail(context, streakDays: s.streakDays),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
+        decoration: _cardDeco(),
         child: Row(
           children: [
-            Icon(Icons.local_fire_department, color: Colors.amber.shade700, size: 36),
+            Icon(Icons.local_fire_department,
+                color: s.streakDays > 0 ? Colors.amber.shade700 : Colors.grey,
+                size: 36),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
@@ -556,14 +603,16 @@ class _StatsPageState extends State<StatsPage> {
                     'Aktif Serin',
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.grey,
+                      color: Colors.grey.shade600,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
-                    '${s.streakDays} günlük seri!',
-                    style: TextStyle(
+                    s.streakDays == 0
+                        ? 'Bugün çalışmaya başla!'
+                        : '${s.streakDays} günlük seri!',
+                    style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF4A148C),
@@ -579,21 +628,14 @@ class _StatsPageState extends State<StatsPage> {
     );
   }
 
+  // ── Haftalık Özet (Aktivite Bazlı) ───────────────────────────────
+
   Widget _buildWeeklySummaryCard(BuildContext context, StatsSnapshot s) {
+    final breakdown = s.activityBreakdown;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      decoration: _cardDeco(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -613,164 +655,162 @@ class _StatsPageState extends State<StatsPage> {
           ),
           const SizedBox(height: 12),
           Text(
-            'Bu hafta toplam ${_formatMinutes(s.currentWeeklyMinutes)} çalıştın.',
+            s.currentWeeklyMinutes == 0
+                ? 'Bu hafta henüz çalışma kaydedilmedi.'
+                : 'Bu hafta toplam ${_formatMinutes(s.currentWeeklyMinutes)} çalıştın.',
             style: TextStyle(fontSize: 14, height: 1.4, color: Colors.grey.shade700),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBadgesSection(BuildContext context, StatsSnapshot s) {
-    final badges = [
-      ('7_day_streak', Icons.local_fire_department, '7 gün', Colors.orange),
-      ('50_vocab', Icons.library_books, 'İlk 50', Colors.green),
-      ('1h_listening', Icons.headphones, 'Dinleyici', Colors.blue),
-    ];
-    return GestureDetector(
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BadgesPage())),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Rozetler',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey.shade800,
-            ),
-          ),
-          const SizedBox(height: 12),
-          SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: badges.asMap().entries.map((e) {
-              final (id, icon, label, color) = e.value;
-              final unlocked = s.badges[id] ?? false;
-              return Container(
-                width: 90,
-                margin: EdgeInsets.only(right: e.key < badges.length - 1 ? 12 : 0),
-                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.06),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
+          if (breakdown.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            ...breakdown.entries.map((e) {
+              final (label, icon, color) = _activityMeta(e.key);
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
                   children: [
-                    Icon(icon, color: unlocked ? color : Colors.grey, size: 32),
-                    const SizedBox(height: 8),
+                    Icon(icon, size: 16, color: color),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        label,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade700,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
                     Text(
-                      label,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: unlocked ? Colors.grey.shade800 : Colors.grey.shade500,
+                      _formatMinutes(e.value),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF4A148C),
                       ),
                     ),
                   ],
                 ),
               );
-            }).toList(),
-          ),
-        ),
+            }),
+          ],
         ],
       ),
     );
   }
 
+  // ── Detail Sheets ────────────────────────────────────────────────
+
   void _showStreakDetail(BuildContext context, {required int streakDays}) {
-    const int totalDays = 14;
-    final inactiveCount = totalDays - streakDays;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      isDismissible: true,
-      enableDrag: true,
-      barrierColor: Colors.black54,
       builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.42,
-        minChildSize: 0.35,
-        maxChildSize: 0.5,
+        initialChildSize: 0.55,
+        minChildSize: 0.4,
+        maxChildSize: 0.7,
         builder: (_, controller) => Container(
           decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
-          child: ListView(
-            controller: controller,
-            padding: const EdgeInsets.all(24),
-            shrinkWrap: true,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+          child: FutureBuilder<List<bool>>(
+            future: StatsStore.getDailyStudyLast30(),
+            builder: (ctx, snap) {
+              final days = snap.data ?? List<bool>.filled(30, false);
+              final now = DateTime.now();
+              return ListView(
+                controller: controller,
+                padding: const EdgeInsets.all(24),
+                shrinkWrap: true,
                 children: [
-                  Icon(Icons.local_fire_department, color: Colors.amber.shade700, size: 36),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'Streak geçmişi',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF4A148C),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '$streakDays gündür öğreniyorsun!',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
-              ),
-              const SizedBox(height: 24),
-              Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: List.generate(totalDays, (i) {
-                  final dayActive = i >= inactiveCount;
-                  return Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: dayActive
-                          ? const Color(0xFF7A3EC8).withOpacity(0.2)
-                          : Colors.grey.shade100,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: dayActive ? const Color(0xFF7A3EC8) : Colors.grey.shade300,
-                        width: 2,
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(2),
                       ),
                     ),
-                    child: Icon(
-                      dayActive ? Icons.check : Icons.close,
-                      size: 20,
-                      color: dayActive ? const Color(0xFF7A3EC8) : Colors.grey,
-                    ),
-                  );
-                }),
-              ),
-              const SizedBox(height: 16),
-            ],
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.local_fire_department,
+                          color: streakDays > 0
+                              ? Colors.amber.shade700
+                              : Colors.grey,
+                          size: 36),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Son 30 gün',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF4A148C),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    streakDays == 0
+                        ? 'Bugün ilk günün olsun!'
+                        : '$streakDays gündür öğreniyorsun! 🔥',
+                    textAlign: TextAlign.center,
+                    style:
+                        TextStyle(fontSize: 14, color: Colors.grey.shade700),
+                  ),
+                  const SizedBox(height: 24),
+                  // 30 günlük takvim — 5 satır × 6 sütun
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: List.generate(30, (i) {
+                      final active = days[i];
+                      final date = now.subtract(Duration(days: 29 - i));
+                      return Tooltip(
+                        message:
+                            '${date.day}/${date.month}: ${active ? "çalışıldı" : "çalışılmadı"}',
+                        child: Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: active
+                                ? const Color(0xFF7A3EC8).withValues(alpha: 0.15)
+                                : Colors.grey.shade100,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: active
+                                  ? const Color(0xFF7A3EC8)
+                                  : Colors.grey.shade300,
+                              width: active ? 2 : 1,
+                            ),
+                          ),
+                          child: Center(
+                            child: Text(
+                              '${date.day}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: active
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                                color: active
+                                    ? const Color(0xFF7A3EC8)
+                                    : Colors.grey.shade500,
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              );
+            },
           ),
         ),
       ),
@@ -778,7 +818,7 @@ class _StatsPageState extends State<StatsPage> {
   }
 
   void _showLearningTimeDetail(BuildContext context) {
-    const labels = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
+    const dayLabels = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -789,58 +829,79 @@ class _StatsPageState extends State<StatsPage> {
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: FutureBuilder<List<int>>(
-          future: StatsStore.getDailyMinutesLast7(),
+          // Bu haftanın (Pzt–Paz) dakikaları
+          future: StatsStore.getDailyMinutesThisWeek(),
           builder: (ctx, snap) {
             final dailyMinutes = snap.data ?? List<int>.filled(7, 0);
             final total = dailyMinutes.fold<int>(0, (a, b) => a + b);
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Haftalık öğrenme süresi',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF4A148C),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text('${_formatMinutes(total)} toplam', style: const TextStyle(color: Colors.grey)),
-            const SizedBox(height: 24),
-            ...List.generate(7, (i) {
-              final m = dailyMinutes[i];
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: 40,
-                      child: Text(labels[i], style: TextStyle(color: Colors.grey.shade700)),
+            final maxMins =
+                dailyMinutes.reduce((a, b) => a > b ? a : b).clamp(1, 99999);
+            return SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
                     ),
-                    Expanded(
-                      child: LinearProgressIndicator(
-                        value: m / 120,
-                        minHeight: 8,
-                        backgroundColor: Colors.grey.shade200,
-                        valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF7A3EC8)),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Haftalık öğrenme süresi',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF4A148C),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text('${_formatMinutes(total)} toplam',
+                      style: const TextStyle(color: Colors.grey)),
+                  const SizedBox(height: 24),
+                  ...List.generate(7, (i) {
+                    final m = dailyMinutes[i];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 40,
+                            child: Text(dayLabels[i],
+                                style:
+                                    TextStyle(color: Colors.grey.shade700)),
+                          ),
+                          Expanded(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: LinearProgressIndicator(
+                                value: m / maxMins,
+                                minHeight: 8,
+                                backgroundColor: Colors.grey.shade200,
+                                valueColor:
+                                    const AlwaysStoppedAnimation<Color>(
+                                        Color(0xFF7A3EC8)),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          SizedBox(
+                            width: 48,
+                            child: Text(
+                              _formatMinutes(m),
+                              textAlign: TextAlign.right,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Text('$m dk', style: const TextStyle(fontWeight: FontWeight.w600)),
-                  ],
-                ),
-              );
-            }),
-              ],
+                    );
+                  }),
+                ],
+              ),
             );
           },
         ),
@@ -848,7 +909,8 @@ class _StatsPageState extends State<StatsPage> {
     );
   }
 
-  void _showSkillMasterDetail(BuildContext context, {required Map<String, double> skills}) {
+  void _showSkillMasterDetail(
+      BuildContext context, {required Map<String, double> skills}) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -880,49 +942,80 @@ class _StatsPageState extends State<StatsPage> {
             ),
             const SizedBox(height: 24),
             ...skills.entries.map((e) => Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        e.key,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF4A148C),
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            e.key,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF4A148C),
+                            ),
+                          ),
+                          Text(
+                            '${(e.value * 100).toInt()}%',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey.shade800,
+                            ),
+                          ),
+                        ],
                       ),
-                      Text(
-                        '${(e.value * 100).toInt()}%',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey.shade800,
+                      const SizedBox(height: 8),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: LinearProgressIndicator(
+                          value: e.value,
+                          minHeight: 12,
+                          backgroundColor:
+                              const Color(0xFFD1BEEB).withValues(alpha: 0.4),
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                              Color(0xFF5B8DEE)),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: LinearProgressIndicator(
-                      value: e.value,
-                      minHeight: 12,
-                      backgroundColor: const Color(0xFFD1BEEB).withOpacity(0.4),
-                      valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF5B8DEE)),
-                    ),
-                  ),
-                ],
-              ),
-            )),
+                )),
           ],
         ),
       ),
     );
   }
 
+  // ── Helpers ──────────────────────────────────────────────────────
+
+  BoxDecoration _cardDeco() => BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      );
+
+  static (String label, IconData icon, Color color) _activityMeta(
+      LearningActivity a) {
+    return switch (a) {
+      LearningActivity.vocabulary => ('Kelime', Icons.translate, Colors.purple),
+      LearningActivity.listening =>
+        ('Dinleme', Icons.headphones, Colors.blue),
+      LearningActivity.speaking => ('Konuşma', Icons.mic, Colors.orange),
+      LearningActivity.writing => ('Yazma', Icons.edit, Colors.green),
+      LearningActivity.quiz => ('Quiz', Icons.quiz, Colors.teal),
+      LearningActivity.flashcards =>
+        ('Kartlar', Icons.style, Colors.deepOrange),
+    };
+  }
+
   String _formatMinutes(int minutes) {
+    if (minutes == 0) return '0 dk';
     if (minutes < 60) return '$minutes dk';
     final h = minutes ~/ 60;
     final m = minutes % 60;

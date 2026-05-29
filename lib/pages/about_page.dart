@@ -36,7 +36,7 @@ class AboutPage extends StatelessWidget {
             SizedBox(height: Responsive.gapMd(context)),
             Center(
               child: Text(
-                'Learn English',
+                'İngilizce Öğren',
                 style: TextStyle(
                   fontSize: Responsive.fontSizeTitle(context),
                   fontWeight: FontWeight.bold,

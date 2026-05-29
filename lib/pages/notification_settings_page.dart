@@ -147,32 +147,6 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                 ),
               ),
             ),
-            SizedBox(height: Responsive.gapLg(context)),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () async {
-                  await NotificationService.requestPermissionIfNeeded();
-                  await NotificationService.showNow(
-                    title: 'Notification test',
-                    body: 'This is a test notification from the app.',
-                  );
-                },
-                icon: const Icon(Icons.notifications_active_outlined),
-                label: const Text('Test bildirimi gönder'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppTheme.primary,
-                  side: const BorderSide(color: AppTheme.primary),
-                  minimumSize: Size(0, Responsive.minTouchTarget(context)),
-                  padding: EdgeInsets.symmetric(
-                    vertical: Responsive.buttonPaddingVertical(context),
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
-                  ),
-                ),
-              ),
-            ),
           ],
         ),
       ),

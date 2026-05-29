@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/app_prefs.dart';
+import '../services/auth_service.dart';
+import '../services/profile_notifier.dart';
 import '../utils/responsive.dart';
 import 'result_page.dart';
 
@@ -151,13 +153,36 @@ class _PlacementTestPageState extends State<PlacementTestPage> {
     }
 
     final level = _levelForScore(correct);
+
+    // Yerel kayıt
     await AppPrefs.setPlacementTestScore(correct);
     await AppPrefs.setUserLevel(level);
     await AppPrefs.setPlacementTestCompleted(true);
 
+    // ProfileNotifier'ı güncelle — profil sayfası anında yansıtsın
+    final current = profileNotifier.value ?? await loadProfileFromPrefs();
+    updateProfileNotifier(current.copyWith(level: level));
+
+    // Backend'e seviye + test sonucunu senkronize et (fire-and-forget)
+    final name = await AppPrefs.getUserName();
+    final email = await AppPrefs.getUserEmail();
+    Future(() async {
+      try {
+        await AuthService.updateProfile(
+          name: name,
+          email: email,
+          level: level,
+          placementTestCompleted: true,
+          placementTestScore: correct,
+        );
+      } catch (_) {}
+    });
+
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const ResultPage()),
+      MaterialPageRoute(
+        builder: (_) => ResultPage(score: correct, total: _questions.length, level: level),
+      ),
       (r) => false,
     );
   }

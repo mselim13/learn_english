@@ -3,12 +3,57 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import '../utils/responsive.dart';
 import '../services/profile_notifier.dart';
+import '../services/stats_store.dart';
 import 'practice_room_page.dart';
 import 'listening_exercise_page.dart';
 import 'quiz_page.dart';
 
-class HomePage extends StatelessWidget {
+class _HomeStats {
+  const _HomeStats({
+    required this.streakDays,
+    required this.weeklyMinutes,
+    required this.weeklyGoalMinutes,
+    required this.badgesUnlocked,
+    required this.badgeTotal,
+  });
+
+  final int streakDays;
+  final int weeklyMinutes;
+  final int weeklyGoalMinutes;
+  final int badgesUnlocked;
+  final int badgeTotal;
+}
+
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  late final Future<_HomeStats> _statsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _statsFuture = _loadHomeStats();
+  }
+
+  static Future<_HomeStats> _loadHomeStats() async {
+    final streak = await StatsStore.getStreakDays();
+    final weeklyCur = await StatsStore.getCurrentWeeklyMinutes();
+    final weeklyGoal = await StatsStore.getWeeklyGoalMinutes();
+    final badges = await StatsStore.getBadges();
+    final unlocked = badges.values.where((v) => v).length;
+    return _HomeStats(
+      streakDays: streak,
+      weeklyMinutes: weeklyCur,
+      weeklyGoalMinutes: weeklyGoal,
+      badgesUnlocked: unlocked,
+      badgeTotal: badges.length,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +71,6 @@ class HomePage extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            /// Üst Profil Alanı
             Stack(
               clipBehavior: Clip.none,
               alignment: Alignment.center,
@@ -86,7 +130,7 @@ class HomePage extends StatelessWidget {
                                   );
                                 }
                                 return Text(
-                                  'Kullanıcı - A2',
+                                  'Kullanıcı — A2',
                                   style: TextStyle(
                                     fontSize: Responsive.fontSizeTitleSmall(context),
                                     fontWeight: FontWeight.bold,
@@ -117,9 +161,7 @@ class HomePage extends StatelessWidget {
                           key: ValueKey(data?.avatarPath ?? 'no-avatar'),
                           radius: avatarRadius,
                           backgroundColor: const Color(0xFFD1BEEB),
-                          backgroundImage: hasAvatar
-                              ? FileImage(File(data!.avatarPath!))
-                              : null,
+                          backgroundImage: hasAvatar ? FileImage(File(data!.avatarPath!)) : null,
                           child: hasAvatar
                               ? null
                               : Icon(
@@ -137,26 +179,51 @@ class HomePage extends StatelessWidget {
 
             SizedBox(height: Responsive.spacing(context, multiplier: 2)),
 
-            /// İstatistikler
             Padding(
               padding: EdgeInsets.symmetric(vertical: gapMd, horizontal: horizontalPad),
               child: IntrinsicHeight(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildStatItem(context, Icons.workspace_premium_outlined, "13", Colors.teal),
-                    const VerticalDivider(thickness: 1, color: Colors.grey),
-                    _buildStatItem(context, Icons.trending_up, "22 / 250", Colors.redAccent),
-                    const VerticalDivider(thickness: 1, color: Colors.grey),
-                    _buildStatItem(context, Icons.collections_bookmark_outlined, "2 / 5", Colors.pinkAccent),
-                  ],
+                child: FutureBuilder<_HomeStats>(
+                  future: _statsFuture,
+                  builder: (context, snap) {
+                    final s = snap.data;
+                    final streakStr = s != null ? '${s.streakDays}' : '…';
+                    final weekStr = s != null ? '${s.weeklyMinutes} / ${s.weeklyGoalMinutes} dk' : '…';
+                    final badgeStr = s != null ? '${s.badgesUnlocked} / ${s.badgeTotal}' : '…';
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _buildStatItem(
+                          context,
+                          Icons.local_fire_department_outlined,
+                          streakStr,
+                          Colors.deepOrange,
+                          'Gün serisi',
+                        ),
+                        const VerticalDivider(thickness: 1, color: Colors.grey),
+                        _buildStatItem(
+                          context,
+                          Icons.calendar_today_outlined,
+                          weekStr,
+                          Colors.redAccent,
+                          'Haftalık hedef',
+                        ),
+                        const VerticalDivider(thickness: 1, color: Colors.grey),
+                        _buildStatItem(
+                          context,
+                          Icons.workspace_premium_outlined,
+                          badgeStr,
+                          Colors.pinkAccent,
+                          'Rozet',
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
             ),
 
             Divider(indent: horizontalPad, endIndent: horizontalPad),
 
-            /// Kategoriler
             Expanded(
               child: Padding(
                 padding: EdgeInsets.all(horizontalPad * 0.9),
@@ -167,10 +234,42 @@ class HomePage extends StatelessWidget {
                   mainAxisSpacing: gridSpacing,
                   childAspectRatio: 1.1,
                   children: [
-                    _buildCategoryCard(context, "Words", const Color(0xFFAEF4D1)),
-                    _buildCategoryCard(context, "Writing", const Color(0xFFC76D6D)),
-                    _buildCategoryCard(context, "Speaking", const Color(0xFF91E1E6)),
-                    _buildCategoryCard(context, "Listening", const Color(0xFFF1C1C1)),
+                    _buildCategoryCard(
+                      context,
+                      title: 'Kelime',
+                      color: const Color(0xFFAEF4D1),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const QuizPage(category: 'Kelime')),
+                      ),
+                    ),
+                    _buildCategoryCard(
+                      context,
+                      title: 'Yazma',
+                      color: const Color(0xFFC76D6D),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const PracticeRoomPage(mode: 'writing')),
+                      ),
+                    ),
+                    _buildCategoryCard(
+                      context,
+                      title: 'Konuşma',
+                      color: const Color(0xFF91E1E6),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const PracticeRoomPage(mode: 'speaking')),
+                      ),
+                    ),
+                    _buildCategoryCard(
+                      context,
+                      title: 'Dinleme',
+                      color: const Color(0xFFF1C1C1),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const ListeningExercisePage()),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -181,69 +280,83 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildStatItem(BuildContext context, IconData icon, String value, Color iconColor) {
+  Widget _buildStatItem(
+    BuildContext context,
+    IconData icon,
+    String value,
+    Color iconColor,
+    String caption,
+  ) {
     final iconSize = Responsive.iconSizeMedium(context);
     final fontSize = Responsive.fontSizeTitleSmall(context);
-    return Column(
-      children: [
-        Icon(icon, color: iconColor, size: iconSize),
-        SizedBox(height: Responsive.gapXs(context)),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: fontSize,
-            fontWeight: FontWeight.bold,
-            color: const Color(0xFF4A148C),
+    final capSize = Responsive.fontSizeCaption(context);
+    return Expanded(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: iconColor, size: iconSize),
+          SizedBox(height: Responsive.gapXs(context)),
+          Text(
+            value,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: fontSize,
+              fontWeight: FontWeight.bold,
+              color: const Color(0xFF4A148C),
+            ),
           ),
-        ),
-      ],
+          SizedBox(height: Responsive.gapXs(context) * 0.5),
+          Text(
+            caption,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: capSize,
+              color: Colors.grey.shade600,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildCategoryCard(BuildContext context, String title, Color color) {
-    return GestureDetector(
-      onTap: () {
-        if (title == 'Words') {
-          Navigator.push(context, MaterialPageRoute(
-            builder: (_) => const QuizPage(),
-          ));
-        } else if (title == 'Listening') {
-          Navigator.push(context, MaterialPageRoute(
-            builder: (_) => const ListeningExercisePage(),
-          ));
-        } else if (title == 'Speaking') {
-          Navigator.push(context, MaterialPageRoute(
-            builder: (_) => const PracticeRoomPage(mode: 'speaking'),
-          ));
-        } else if (title == 'Writing') {
-          Navigator.push(context, MaterialPageRoute(
-            builder: (_) => const PracticeRoomPage(mode: 'writing'),
-          ));
-        }
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(Responsive.cardRadius(context) + 2),
-          boxShadow: [
-            BoxShadow(
-              blurRadius: Responsive.gapSm(context) * 1.2,
-              color: Colors.black.withOpacity(0.1),
-              offset: Offset(0, Responsive.gapXs(context)),
+  Widget _buildCategoryCard(
+    BuildContext context, {
+    required String title,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Semantics(
+      button: true,
+      label: title,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(Responsive.cardRadius(context) + 2),
+            boxShadow: [
+              BoxShadow(
+                blurRadius: Responsive.gapSm(context) * 1.2,
+                color: Colors.black.withOpacity(0.1),
+                offset: Offset(0, Responsive.gapXs(context)),
+              ),
+            ],
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            title,
+            style: TextStyle(
+              fontSize: Responsive.fontSizeTitleSmall(context),
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
             ),
-          ],
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          title,
-          style: TextStyle(
-            fontSize: Responsive.fontSizeTitleSmall(context),
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
           ),
         ),
       ),
     );
   }
-
 }
