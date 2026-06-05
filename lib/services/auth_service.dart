@@ -306,6 +306,43 @@ class AuthService {
     profileNotifier.value = null;
   }
 
+  /// Şifre sıfırlama OTP'si gönderir.
+  static Future<({bool success, String? error})> forgotPassword(
+      String email) async {
+    try {
+      final res = await ApiService.post(
+        '/auth/forgot-password',
+        {'email': email.trim()},
+        auth: false,
+      );
+      if (res.statusCode == 200) return (success: true, error: null);
+      final body = jsonDecode(res.body) as Map<String, dynamic>;
+      return (success: false, error: body['message'] as String?);
+    } catch (_) {
+      return (success: false, error: 'Sunucuya bağlanılamadı.');
+    }
+  }
+
+  /// OTP ile parolayı sıfırlar.
+  static Future<({bool success, String? error})> resetPassword({
+    required String email,
+    required String otp,
+    required String newPassword,
+  }) async {
+    try {
+      final res = await ApiService.post(
+        '/auth/reset-password',
+        {'email': email.trim(), 'otp': otp.trim(), 'newPassword': newPassword},
+        auth: false,
+      );
+      if (res.statusCode == 200) return (success: true, error: null);
+      final body = jsonDecode(res.body) as Map<String, dynamic>;
+      return (success: false, error: body['message'] as String?);
+    } catch (_) {
+      return (success: false, error: 'Sunucuya bağlanılamadı.');
+    }
+  }
+
   /// Sadece avatarı güncelle (avatar sunucuya yüklenmez; yerel kalır).
   static Future<void> updateAvatar(String? path) async {
     if (path == null || path.trim().isEmpty) {

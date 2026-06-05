@@ -27,6 +27,9 @@ const userSchema = new mongoose.Schema(
     darkMode: { type: Boolean, default: false },
     // Refresh token, çıkışta null yapılarak oturum geçersiz kılınır.
     refreshToken: { type: String, default: null },
+    // Parola sıfırlama OTP (6 haneli, 15 dakika geçerli)
+    resetPasswordOtp:     { type: String, default: null },
+    resetPasswordExpires: { type: Date,   default: null },
   },
   { timestamps: true }
 );

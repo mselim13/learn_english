@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const authMiddleware = require('../middleware/auth');
+const { sendResetOtp } = require('../utils/mailer');
 
 const router = express.Router();
 
@@ -177,6 +178,67 @@ router.delete('/account', authMiddleware, async (req, res) => {
   } catch (err) {
     console.error('delete account:', err.message);
     res.status(500).json({ message: 'Sunucu hatası' });
+  }
+});
+
+// POST /api/auth/forgot-password — OTP gönder
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email || typeof email !== 'string') {
+      return res.status(400).json({ message: 'E-posta zorunludur' });
+    }
+
+    const user = await User.findOne({ email: email.trim().toLowerCase() });
+
+    // Güvenlik: kullanıcı bulunsun ya da bulunmasın aynı yanıtı ver
+    if (user) {
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      user.resetPasswordOtp = otp;
+      user.resetPasswordExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 dk
+      await user.save();
+      await sendResetOtp(user.email, otp);
+    }
+
+    res.json({ message: 'Kod e-posta adresine gönderildi' });
+  } catch (err) {
+    console.error('forgot-password:', err.message);
+    res.status(500).json({ message: 'E-posta gönderilemedi', error: err.message });
+  }
+});
+
+// POST /api/auth/reset-password — OTP doğrula, parolayı güncelle
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({ message: 'E-posta, kod ve yeni parola zorunludur' });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'Parola en az 6 karakter olmalıdır' });
+    }
+
+    const user = await User.findOne({
+      email: email.trim().toLowerCase(),
+      resetPasswordOtp: otp.trim(),
+      resetPasswordExpires: { $gt: new Date() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Kod hatalı veya süresi dolmuş' });
+    }
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    user.resetPasswordOtp = null;
+    user.resetPasswordExpires = null;
+    user.refreshToken = null; // Tüm aktif oturumları sonlandır
+    await user.save();
+
+    res.json({ message: 'Parola başarıyla sıfırlandı' });
+  } catch (err) {
+    console.error('reset-password:', err.message);
+    res.status(500).json({ message: 'Parola sıfırlanamadı', error: err.message });
   }
 });
 
