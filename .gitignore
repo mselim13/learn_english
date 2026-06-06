@@ -1,0 +1,49 @@
+# ── Flutter / Dart ────────────────────────────────────────────────
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+*.iml
+
+# ── Android ───────────────────────────────────────────────────────
+android/local.properties
+android/.gradle/
+android/app/debug/
+android/app/profile/
+android/app/release/
+android/key.properties
+
+# ── iOS ───────────────────────────────────────────────────────────
+ios/.generated/
+ios/Flutter/App.framework
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Flutter/Generated.xcconfig
+ios/Flutter/app.flx
+ios/Flutter/app.zip
+ios/Flutter/flutter_assets/
+ios/ServiceDefinitions.json
+ios/Runner/GeneratedPluginRegistrant.*
+ios/Pods/
+
+# ── Backend (Node.js) ─────────────────────────────────────────────
+backend/.env
+backend/node_modules/
+backend/utils/
+
+# ── IDE / Editor ──────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ── macOS ─────────────────────────────────────────────────────────
+.DS_Store
+**/.DS_Store
+
+# ── Misc ──────────────────────────────────────────────────────────
+*.log
+coverage/

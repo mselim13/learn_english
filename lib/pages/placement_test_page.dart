@@ -163,20 +163,18 @@ class _PlacementTestPageState extends State<PlacementTestPage> {
     final current = profileNotifier.value ?? await loadProfileFromPrefs();
     updateProfileNotifier(current.copyWith(level: level));
 
-    // Backend'e seviye + test sonucunu senkronize et (fire-and-forget)
+    // Backend'e seviye + test sonucunu senkronize et
     final name = await AppPrefs.getUserName();
     final email = await AppPrefs.getUserEmail();
-    Future(() async {
-      try {
-        await AuthService.updateProfile(
-          name: name,
-          email: email,
-          level: level,
-          placementTestCompleted: true,
-          placementTestScore: correct,
-        );
-      } catch (_) {}
-    });
+    try {
+      await AuthService.updateProfile(
+        name: name,
+        email: email,
+        level: level,
+        placementTestCompleted: true,
+        placementTestScore: correct,
+      );
+    } catch (_) {}
 
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
