@@ -287,237 +287,251 @@ class _PracticeRoomPageState extends State<PracticeRoomPage> {
                   AppTheme.buildAppBar(context, isSpeaking ? 'Konuşma pratiği' : 'Yazma pratiği'),
                   SizedBox(height: spacing),
 
-                  // Konu chips
-                  Text(
-                    'Konu seç',
-                    style: TextStyle(
-                      fontSize: Responsive.fontSizeBodySmall(context),
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade700,
-                    ),
-                  ),
-                  SizedBox(height: spacing * 0.5),
-                  SizedBox(
-                    height: Responsive.minTouchTarget(context) + 8,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: _topics.length,
-                      separatorBuilder: (context, i) => SizedBox(width: spacing * 0.5),
-                      itemBuilder: (context, i) {
-                        final selected = _topics[i] == _currentTopic;
-                        return ActionChip(
-                          label: Text(
-                            _topics[i],
+                  // Kaydırılabilir içerik (klavye açılınca taşmayı önler)
+                  Expanded(
+                    child: SingleChildScrollView(
+                      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Konu chips
+                          Text(
+                            'Konu seç',
                             style: TextStyle(
                               fontSize: Responsive.fontSizeBodySmall(context),
-                              color: selected ? Colors.white : AppTheme.primary,
-                              fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey.shade700,
                             ),
                           ),
-                          onPressed: _loadingPrompt
-                              ? null
-                              : () {
-                                  if (_currentTopic == _topics[i]) return;
-                                  setState(() => _currentTopic = _topics[i]);
-                                  _loadPrompt(_topics[i]);
-                                },
-                          backgroundColor: selected
-                              ? AppTheme.primary
-                              : AppTheme.primaryLight.withValues(alpha: 0.3),
-                        );
-                      },
-                    ),
-                  ),
-                  SizedBox(height: spacing),
-
-                  // AI prompt kartı
-                  Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.all(Responsive.cardPadding(context)),
-                    decoration: AppTheme.cardDecorationFor(context),
-                    child: _loadingPrompt
-                        ? Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primary),
-                              ),
-                              const SizedBox(width: 10),
-                              Text(
-                                'Gemini AI soru hazırlıyor…',
-                                style: TextStyle(
-                                  fontSize: Responsive.fontSizeBodySmall(context),
-                                  color: AppTheme.primary,
-                                ),
-                              ),
-                            ],
-                          )
-                        : Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(Icons.auto_awesome, size: 13, color: Colors.grey.shade500),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    'Gemini AI',
-                                    style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                          SizedBox(height: spacing * 0.5),
+                          SizedBox(
+                            height: Responsive.minTouchTarget(context) + 8,
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: _topics.length,
+                              separatorBuilder: (context, i) => SizedBox(width: spacing * 0.5),
+                              itemBuilder: (context, i) {
+                                final selected = _topics[i] == _currentTopic;
+                                return ActionChip(
+                                  label: Text(
+                                    _topics[i],
+                                    style: TextStyle(
+                                      fontSize: Responsive.fontSizeBodySmall(context),
+                                      color: selected ? Colors.white : AppTheme.primary,
+                                      fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                                    ),
                                   ),
-                                ],
-                              ),
-                              SizedBox(height: spacing * 0.5),
-                              Text(
-                                _promptText ?? '',
-                                style: TextStyle(
-                                  fontSize: Responsive.fontSizeTitleSmall(context),
-                                  fontWeight: FontWeight.w600,
-                                  color: AppTheme.primary,
+                                  onPressed: _loadingPrompt
+                                      ? null
+                                      : () {
+                                          if (_currentTopic == _topics[i]) return;
+                                          setState(() => _currentTopic = _topics[i]);
+                                          _loadPrompt(_topics[i]);
+                                        },
+                                  backgroundColor: selected
+                                      ? AppTheme.primary
+                                      : AppTheme.primaryLight.withValues(alpha: 0.3),
+                                );
+                              },
+                            ),
+                          ),
+                          SizedBox(height: spacing),
+
+                          // AI prompt kartı
+                          Container(
+                            width: double.infinity,
+                            padding: EdgeInsets.all(Responsive.cardPadding(context)),
+                            decoration: AppTheme.cardDecorationFor(context),
+                            child: _loadingPrompt
+                                ? Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primary),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Text(
+                                        'Gemini AI soru hazırlıyor…',
+                                        style: TextStyle(
+                                          fontSize: Responsive.fontSizeBodySmall(context),
+                                          color: AppTheme.primary,
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                : Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Icon(Icons.auto_awesome, size: 13, color: Colors.grey.shade500),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            'Gemini AI',
+                                            style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                                          ),
+                                        ],
+                                      ),
+                                      SizedBox(height: spacing * 0.5),
+                                      Text(
+                                        _promptText ?? '',
+                                        style: TextStyle(
+                                          fontSize: Responsive.fontSizeTitleSmall(context),
+                                          fontWeight: FontWeight.w600,
+                                          color: AppTheme.primary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                          ),
+                          SizedBox(height: spacing),
+
+                          // Input section
+                          if (isSpeaking) ...[
+                            if (!_speechReady)
+                              Padding(
+                                padding: EdgeInsets.only(bottom: spacing),
+                                child: Text(
+                                  'Ses tanıma hazırlanıyor veya bu cihazda desteklenmiyor.',
+                                  style: TextStyle(
+                                    fontSize: Responsive.fontSizeBodySmall(context),
+                                    color: Colors.orange.shade800,
+                                  ),
+                                  textAlign: TextAlign.center,
                                 ),
                               ),
-                            ],
-                          ),
-                  ),
-                  SizedBox(height: spacing),
-
-                  // Input section
-                  if (isSpeaking) ...[
-                    if (!_speechReady)
-                      Padding(
-                        padding: EdgeInsets.only(bottom: spacing),
-                        child: Text(
-                          'Ses tanıma hazırlanıyor veya bu cihazda desteklenmiyor.',
-                          style: TextStyle(
-                            fontSize: Responsive.fontSizeBodySmall(context),
-                            color: Colors.orange.shade800,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    Center(
-                      child: GestureDetector(
-                        onTap: _speechReady ? _toggleListening : null,
-                        child: Opacity(
-                          opacity: _speechReady ? 1 : 0.5,
-                          child: Container(
-                            width: Responsive.iconSizeLarge(context) * 1.4,
-                            height: Responsive.iconSizeLarge(context) * 1.4,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: listening
-                                  ? Colors.red.shade100
-                                  : AppTheme.primaryLight.withValues(alpha: 0.5),
-                            ),
-                            child: Icon(
-                              listening ? Icons.stop : Icons.mic,
-                              size: Responsive.iconSizeLarge(context),
-                              color: listening ? Colors.red : AppTheme.primary,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: spacing * 0.5),
-                    Center(
-                      child: Text(
-                        !_speechReady
-                            ? 'Bekleyin...'
-                            : listening
-                                ? 'Dinleniyor… İngilizce konuş'
-                                : 'Mikrofona dokun, konuşmayı başlat',
-                        style: TextStyle(
-                          fontSize: Responsive.fontSizeBody(context),
-                          color: Colors.grey.shade600,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    SizedBox(height: spacing),
-                    Text(
-                      'Algılanan metin',
-                      style: TextStyle(
-                        fontSize: Responsive.fontSizeBodySmall(context),
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.primary,
-                      ),
-                    ),
-                    SizedBox(height: spacing * 0.5),
-                    Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.all(Responsive.cardPadding(context)),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
-                        border: Border.all(color: Colors.grey.shade300),
-                      ),
-                      constraints: BoxConstraints(minHeight: Responsive.minTouchTarget(context) * 2),
-                      child: Text(
-                        _recognizedText.isEmpty
-                            ? (listening ? 'Konuşmaya başla…' : 'Metin burada görünecek.')
-                            : _recognizedText,
-                        style: TextStyle(
-                          fontSize: Responsive.fontSizeBody(context),
-                          color: _recognizedText.isEmpty ? Colors.grey.shade500 : Colors.black87,
-                        ),
-                      ),
-                    ),
-                  ] else ...[
-                    Text(
-                      'Cevabını yaz (İngilizce):',
-                      style: TextStyle(
-                        fontSize: Responsive.fontSizeBody(context),
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.primary,
-                      ),
-                    ),
-                    SizedBox(height: spacing * 0.5),
-                    TextField(
-                      controller: _controller,
-                      maxLines: 5,
-                      decoration: InputDecoration(
-                        hintText: 'Örn: My name is Nihan. I am learning English.',
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
-                          borderSide: BorderSide(color: Colors.grey.shade300),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
-                          borderSide: BorderSide(color: Colors.grey.shade300),
-                        ),
-                      ),
-                    ),
-                  ],
-
-                  const Spacer(),
-
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: (_loadingPrompt || _submitting) ? null : _submit,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primary,
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(
-                          vertical: Responsive.buttonPaddingVertical(context),
-                        ),
-                        minimumSize: Size(0, Responsive.minTouchTarget(context)),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
-                        ),
-                      ),
-                      child: _submitting
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
+                            Center(
+                              child: GestureDetector(
+                                onTap: _speechReady ? _toggleListening : null,
+                                child: Opacity(
+                                  opacity: _speechReady ? 1 : 0.5,
+                                  child: Container(
+                                    width: Responsive.iconSizeLarge(context) * 1.4,
+                                    height: Responsive.iconSizeLarge(context) * 1.4,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: listening
+                                          ? Colors.red.shade100
+                                          : AppTheme.primaryLight.withValues(alpha: 0.5),
+                                    ),
+                                    child: Icon(
+                                      listening ? Icons.stop : Icons.mic,
+                                      size: Responsive.iconSizeLarge(context),
+                                      color: listening ? Colors.red : AppTheme.primary,
+                                    ),
+                                  ),
+                                ),
                               ),
-                            )
-                          : const Text('Gönder ve Değerlendir'),
+                            ),
+                            SizedBox(height: spacing * 0.5),
+                            Center(
+                              child: Text(
+                                !_speechReady
+                                    ? 'Bekleyin...'
+                                    : listening
+                                        ? 'Dinleniyor… İngilizce konuş'
+                                        : 'Mikrofona dokun, konuşmayı başlat',
+                                style: TextStyle(
+                                  fontSize: Responsive.fontSizeBody(context),
+                                  color: Colors.grey.shade600,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            SizedBox(height: spacing),
+                            Text(
+                              'Algılanan metin',
+                              style: TextStyle(
+                                fontSize: Responsive.fontSizeBodySmall(context),
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.primary,
+                              ),
+                            ),
+                            SizedBox(height: spacing * 0.5),
+                            Container(
+                              width: double.infinity,
+                              padding: EdgeInsets.all(Responsive.cardPadding(context)),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
+                                border: Border.all(color: Colors.grey.shade300),
+                              ),
+                              constraints: BoxConstraints(minHeight: Responsive.minTouchTarget(context) * 2),
+                              child: Text(
+                                _recognizedText.isEmpty
+                                    ? (listening ? 'Konuşmaya başla…' : 'Metin burada görünecek.')
+                                    : _recognizedText,
+                                style: TextStyle(
+                                  fontSize: Responsive.fontSizeBody(context),
+                                  color: _recognizedText.isEmpty ? Colors.grey.shade500 : Colors.black87,
+                                ),
+                              ),
+                            ),
+                          ] else ...[
+                            Text(
+                              'Cevabını yaz (İngilizce):',
+                              style: TextStyle(
+                                fontSize: Responsive.fontSizeBody(context),
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.primary,
+                              ),
+                            ),
+                            SizedBox(height: spacing * 0.5),
+                            TextField(
+                              controller: _controller,
+                              maxLines: 5,
+                              decoration: InputDecoration(
+                                hintText: 'Örn: My name is Nihan. I am learning English.',
+                                filled: true,
+                                fillColor: Colors.white,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
+                                  borderSide: BorderSide(color: Colors.grey.shade300),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
+                                  borderSide: BorderSide(color: Colors.grey.shade300),
+                                ),
+                              ),
+                            ),
+                          ],
+                          SizedBox(height: spacing * 2),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Gönder butonu (klavyeden bağımsız, hep altta)
+                  Padding(
+                    padding: EdgeInsets.only(top: spacing * 0.5),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: (_loadingPrompt || _submitting) ? null : _submit,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primary,
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.symmetric(
+                            vertical: Responsive.buttonPaddingVertical(context),
+                          ),
+                          minimumSize: Size(0, Responsive.minTouchTarget(context)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
+                          ),
+                        ),
+                        child: _submitting
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text('Gönder ve Değerlendir'),
+                      ),
                     ),
                   ),
                 ],

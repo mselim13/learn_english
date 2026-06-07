@@ -285,169 +285,181 @@ class _QuizPageState extends State<QuizPage> {
       children: [
         AppTheme.buildAppBar(context, 'Quiz'),
 
-        // AI badge + hata mesajı
-        if (_loadError != null)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Row(
+        Expanded(
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.info_outline, size: 13, color: Colors.orange.shade700),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    _loadError!,
-                    style: TextStyle(fontSize: 11, color: Colors.orange.shade700),
-                  ),
-                ),
-              ],
-            ),
-          )
-        else
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Row(
-              children: [
-                Icon(Icons.auto_awesome, size: 13, color: AppTheme.primary),
-                const SizedBox(width: 4),
-                Text(
-                  'Gemini AI • Seviyene göre hazırlandı',
-                  style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
-                ),
-              ],
-            ),
-          ),
-
-        SizedBox(height: spacing),
-        LinearProgressIndicator(
-          value: (_currentIndex + 1) / _questions.length,
-          backgroundColor: AppTheme.primaryLight.withValues(alpha: 0.3),
-          valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primary),
-        ),
-        SizedBox(height: spacing * 0.5),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              '${_currentIndex + 1} / ${_questions.length}',
-              style: TextStyle(fontSize: Responsive.fontSizeCaption(context), color: Colors.grey.shade600),
-            ),
-            Text(
-              '$_correctCount doğru',
-              style: TextStyle(
-                fontSize: Responsive.fontSizeCaption(context),
-                color: AppTheme.primary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-
-        SizedBox(height: spacing * 3),
-        Center(
-          child: Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: Responsive.cardPadding(context) * 1.5,
-              vertical: Responsive.cardPadding(context),
-            ),
-            decoration: AppTheme.cardDecorationFor(context),
-            child: Text(
-              q['word'] as String,
-              style: TextStyle(
-                fontSize: Responsive.fontSizeDisplay(context),
-                fontWeight: FontWeight.bold,
-                color: AppTheme.primary,
-              ),
-            ),
-          ),
-        ),
-        SizedBox(height: spacing * 2),
-        Text(
-          'Doğru anlamı seç:',
-          style: TextStyle(
-            fontSize: Responsive.fontSizeBody(context),
-            fontWeight: FontWeight.w600,
-            color: AppTheme.primary,
-          ),
-        ),
-        SizedBox(height: spacing),
-
-        ...List.generate(options.length, (i) {
-          final isSelected = _selectedChoice == i;
-          final isCorrect = i == correctIndex;
-          Color? bgColor;
-          if (showFeedback) {
-            if (isCorrect) {
-              bgColor = Colors.green.shade50;
-            } else if (isSelected) {
-              bgColor = Colors.red.shade50;
-            }
-          }
-          return Padding(
-            padding: EdgeInsets.only(bottom: spacing),
-            child: Material(
-              color: bgColor ?? Colors.white,
-              borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
-              child: InkWell(
-                onTap: _answered ? null : () => _onSelect(i),
-                borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
-                child: Container(
-                  padding: EdgeInsets.all(Responsive.cardPadding(context)),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
-                    border: Border.all(
-                      color: showFeedback && isCorrect
-                          ? Colors.green
-                          : (showFeedback && isSelected ? Colors.red : (isSelected ? AppTheme.primary : Colors.grey.shade200)),
-                      width: (isSelected || (showFeedback && isCorrect)) ? 2 : 1,
+                // AI badge + hata mesajı
+                if (_loadError != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline, size: 13, color: Colors.orange.shade700),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            _loadError!,
+                            style: TextStyle(fontSize: 11, color: Colors.orange.shade700),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      children: [
+                        Icon(Icons.auto_awesome, size: 13, color: AppTheme.primary),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Gemini AI • Seviyene göre hazırlandı',
+                          style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                        ),
+                      ],
                     ),
                   ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        showFeedback && isCorrect
-                            ? Icons.check_circle
-                            : (showFeedback && isSelected && !isCorrect
-                                ? Icons.cancel
-                                : (isSelected ? Icons.radio_button_checked : Icons.radio_button_off)),
-                        size: Responsive.iconSizeSmall(context),
-                        color: showFeedback && isCorrect
-                            ? Colors.green
-                            : (showFeedback && isSelected && !isCorrect ? Colors.red : AppTheme.primary),
+
+                SizedBox(height: spacing),
+                LinearProgressIndicator(
+                  value: (_currentIndex + 1) / _questions.length,
+                  backgroundColor: AppTheme.primaryLight.withValues(alpha: 0.3),
+                  valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primary),
+                ),
+                SizedBox(height: spacing * 0.5),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '${_currentIndex + 1} / ${_questions.length}',
+                      style: TextStyle(fontSize: Responsive.fontSizeCaption(context), color: Colors.grey.shade600),
+                    ),
+                    Text(
+                      '$_correctCount doğru',
+                      style: TextStyle(
+                        fontSize: Responsive.fontSizeCaption(context),
+                        color: AppTheme.primary,
+                        fontWeight: FontWeight.w600,
                       ),
-                      SizedBox(width: Responsive.spacing(context)),
-                      Expanded(
-                        child: Text(
-                          options[i],
-                          style: TextStyle(
-                            fontSize: Responsive.fontSizeBody(context),
-                            fontWeight: FontWeight.w500,
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: spacing * 3),
+                Center(
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: Responsive.cardPadding(context) * 1.5,
+                      vertical: Responsive.cardPadding(context),
+                    ),
+                    decoration: AppTheme.cardDecorationFor(context),
+                    child: Text(
+                      q['word'] as String,
+                      style: TextStyle(
+                        fontSize: Responsive.fontSizeDisplay(context),
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primary,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: spacing * 2),
+                Text(
+                  'Doğru anlamı seç:',
+                  style: TextStyle(
+                    fontSize: Responsive.fontSizeBody(context),
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.primary,
+                  ),
+                ),
+                SizedBox(height: spacing),
+
+                ...List.generate(options.length, (i) {
+                  final isSelected = _selectedChoice == i;
+                  final isCorrect = i == correctIndex;
+                  Color? bgColor;
+                  if (showFeedback) {
+                    if (isCorrect) {
+                      bgColor = Colors.green.shade50;
+                    } else if (isSelected) {
+                      bgColor = Colors.red.shade50;
+                    }
+                  }
+                  return Padding(
+                    padding: EdgeInsets.only(bottom: spacing),
+                    child: Material(
+                      color: bgColor ?? Colors.white,
+                      borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
+                      child: InkWell(
+                        onTap: _answered ? null : () => _onSelect(i),
+                        borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
+                        child: Container(
+                          padding: EdgeInsets.all(Responsive.cardPadding(context)),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
+                            border: Border.all(
+                              color: showFeedback && isCorrect
+                                  ? Colors.green
+                                  : (showFeedback && isSelected ? Colors.red : (isSelected ? AppTheme.primary : Colors.grey.shade200)),
+                              width: (isSelected || (showFeedback && isCorrect)) ? 2 : 1,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                showFeedback && isCorrect
+                                    ? Icons.check_circle
+                                    : (showFeedback && isSelected && !isCorrect
+                                        ? Icons.cancel
+                                        : (isSelected ? Icons.radio_button_checked : Icons.radio_button_off)),
+                                size: Responsive.iconSizeSmall(context),
+                                color: showFeedback && isCorrect
+                                    ? Colors.green
+                                    : (showFeedback && isSelected && !isCorrect ? Colors.red : AppTheme.primary),
+                              ),
+                              SizedBox(width: Responsive.spacing(context)),
+                              Expanded(
+                                child: Text(
+                                  options[i],
+                                  style: TextStyle(
+                                    fontSize: Responsive.fontSizeBody(context),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  );
+                }),
+
+                SizedBox(height: spacing),
+              ],
+            ),
+          ),
+        ),
+
+        Padding(
+          padding: EdgeInsets.only(top: spacing * 0.5),
+          child: SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _answered ? _next : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primary,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(vertical: Responsive.buttonPaddingVertical(context)),
+                minimumSize: Size(0, Responsive.minTouchTarget(context)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
                 ),
               ),
+              child: Text(_currentIndex < _questions.length - 1 ? 'İleri' : 'Bitir'),
             ),
-          );
-        }),
-
-        const Spacer(),
-
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: _answered ? _next : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primary,
-              foregroundColor: Colors.white,
-              padding: EdgeInsets.symmetric(vertical: Responsive.buttonPaddingVertical(context)),
-              minimumSize: Size(0, Responsive.minTouchTarget(context)),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
-              ),
-            ),
-            child: Text(_currentIndex < _questions.length - 1 ? 'İleri' : 'Bitir'),
           ),
         ),
       ],

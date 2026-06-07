@@ -200,7 +200,7 @@ class _NewPasswordPageState extends State<NewPasswordPage> {
               ),
             ),
 
-            const Spacer(),
+            SizedBox(height: Responsive.gapLg(context)),
 
             SizedBox(
               width: double.infinity,

@@ -192,13 +192,8 @@ class AuthService {
       await AppPrefs.setDailyGoalMinutes(user['dailyGoalMinutes'] as int);
     }
     if (user['placementTestCompleted'] != null) {
-      final backendValue = user['placementTestCompleted'] as bool;
-      // Yerel 'true' varsa backend 'false'un üzerine yazmasına izin verme.
-      // (Backend henüz senkronize olmamış olabilir.)
-      final localValue = await AppPrefs.getPlacementTestCompleted();
-      if (backendValue || !localValue) {
-        await AppPrefs.setPlacementTestCompleted(backendValue);
-      }
+      await AppPrefs.setPlacementTestCompleted(
+          user['placementTestCompleted'] as bool);
     }
     if (user['placementTestScore'] != null) {
       await AppPrefs.setPlacementTestScore(user['placementTestScore'] as int);
@@ -278,6 +273,8 @@ class AuthService {
     await AppPrefs.setAccessToken(null);
     await AppPrefs.setRefreshToken(null);
     await AppPrefs.setLoggedIn(false);
+    await AppPrefs.setPlacementTestCompleted(false);
+    await AppPrefs.setPlacementTestScore(0);
     profileNotifier.value = null;
   }
 

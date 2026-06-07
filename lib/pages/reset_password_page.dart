@@ -201,7 +201,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
               ],
             ),
 
-            const Spacer(),
+            SizedBox(height: Responsive.gapLg(context)),
 
             SizedBox(
               width: double.infinity,

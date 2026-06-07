@@ -364,209 +364,222 @@ class _ListeningExercisePageState extends State<ListeningExercisePage> {
         AppTheme.buildAppBar(context, 'Dinleme'),
         SizedBox(height: spacing * 0.5),
 
-        // AI badge
-        if (_aiGenerated)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 6),
-            child: Row(
+        // Kaydırılabilir içerik (klavye açılınca taşmayı önler)
+        Expanded(
+          child: SingleChildScrollView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.auto_awesome, size: 13, color: AppTheme.primary),
-                const SizedBox(width: 4),
-                Text(
-                  'Gemini AI • Seviyene göre hazırlandı',
-                  style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                // AI badge
+                if (_aiGenerated)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Row(
+                      children: [
+                        Icon(Icons.auto_awesome, size: 13, color: AppTheme.primary),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Gemini AI • Seviyene göre hazırlandı',
+                          style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                // Progress
+                LinearProgressIndicator(
+                  value: (_currentIndex + 1) / _sentences.length,
+                  backgroundColor: AppTheme.primaryLight.withValues(alpha: 0.3),
+                  valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primary),
                 ),
+                SizedBox(height: spacing * 0.5),
+                Text(
+                  '${_currentIndex + 1} / ${_sentences.length}',
+                  style: TextStyle(fontSize: Responsive.fontSizeCaption(context), color: Colors.grey.shade600),
+                ),
+                SizedBox(height: spacing),
+
+                Text(
+                  'Cümleyi dinle ve dinlediklerini yaz:',
+                  style: TextStyle(
+                    fontSize: Responsive.fontSizeBodySmall(context),
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+                SizedBox(height: spacing),
+
+                // Cümle kartı
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(Responsive.cardPadding(context)),
+                  decoration: AppTheme.cardDecorationFor(context),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.headphones,
+                        size: Responsive.iconSizeLarge(context),
+                        color: AppTheme.primary.withValues(alpha: 0.8),
+                      ),
+                      SizedBox(height: spacing),
+                      AnimatedCrossFade(
+                        duration: const Duration(milliseconds: 300),
+                        crossFadeState: _showText
+                            ? CrossFadeState.showSecond
+                            : CrossFadeState.showFirst,
+                        firstChild: Text(
+                          '••••••••••••••••••••',
+                          style: TextStyle(
+                            fontSize: Responsive.fontSizeTitle(context),
+                            letterSpacing: 4,
+                            color: Colors.grey.shade400,
+                          ),
+                        ),
+                        secondChild: Text(
+                          _sentences[_currentIndex],
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: Responsive.fontSizeTitleSmall(context),
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.primary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: spacing * 2),
+
+                // Play button
+                Center(
+                  child: IconButton.filled(
+                    onPressed: _speak,
+                    icon: Icon(
+                      _playing ? Icons.stop : Icons.play_arrow,
+                      size: Responsive.iconSizeLarge(context) * 0.6,
+                    ),
+                    style: IconButton.styleFrom(
+                      backgroundColor: _playing ? Colors.red : AppTheme.primary,
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.all(Responsive.cardPadding(context) * 0.7),
+                      minimumSize: Size(
+                        Responsive.minTouchTarget(context) * 2,
+                        Responsive.minTouchTarget(context) * 2,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: spacing),
+
+                // Kullanıcı girişi
+                Text(
+                  'Dinlediklerini yaz:',
+                  style: TextStyle(
+                    fontSize: Responsive.fontSizeBody(context),
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey.shade800,
+                  ),
+                ),
+                SizedBox(height: spacing * 0.5),
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(Responsive.cardPadding(context)),
+                  decoration: AppTheme.cardDecorationFor(context),
+                  child: TextField(
+                    controller: _controllers[_currentIndex],
+                    focusNode: _focusNodes[_currentIndex],
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      hintText: 'Dinlediğin cümleyi buraya yaz...',
+                      hintStyle: TextStyle(color: Colors.grey.shade400),
+                      border: InputBorder.none,
+                      isDense: true,
+                    ),
+                    style: TextStyle(fontSize: Responsive.fontSizeBody(context)),
+                  ),
+                ),
+                SizedBox(height: spacing * 0.5),
+
+                // Metni göster/gizle
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () => setState(() => _showText = !_showText),
+                    icon: Icon(
+                      _showText ? Icons.visibility_off : Icons.visibility,
+                      size: Responsive.iconSizeSmall(context),
+                    ),
+                    label: Text(
+                      _showText ? 'Metni gizle' : 'Metni göster (ipucu)',
+                      style: TextStyle(fontSize: Responsive.fontSizeButton(context)),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.primary,
+                      side: const BorderSide(color: AppTheme.primary),
+                      padding: EdgeInsets.symmetric(vertical: Responsive.buttonPaddingVertical(context)),
+                      minimumSize: Size(0, Responsive.minTouchTarget(context)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: spacing * 2),
               ],
             ),
           ),
-
-        // Progress
-        LinearProgressIndicator(
-          value: (_currentIndex + 1) / _sentences.length,
-          backgroundColor: AppTheme.primaryLight.withValues(alpha: 0.3),
-          valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primary),
         ),
-        SizedBox(height: spacing * 0.5),
-        Text(
-          '${_currentIndex + 1} / ${_sentences.length}',
-          style: TextStyle(fontSize: Responsive.fontSizeCaption(context), color: Colors.grey.shade600),
-        ),
-        SizedBox(height: spacing),
 
-        Text(
-          'Cümleyi dinle ve dinlediklerini yaz:',
-          style: TextStyle(
-            fontSize: Responsive.fontSizeBodySmall(context),
-            color: Colors.grey.shade700,
-          ),
-        ),
-        SizedBox(height: spacing),
-
-        // Cümle kartı
-        Container(
-          width: double.infinity,
-          padding: EdgeInsets.all(Responsive.cardPadding(context)),
-          decoration: AppTheme.cardDecorationFor(context),
-          child: Column(
+        // İleri / Bitir navigasyonu (klavyeden bağımsız, hep altta)
+        Padding(
+          padding: EdgeInsets.only(top: spacing * 0.5),
+          child: Row(
             children: [
-              Icon(
-                Icons.headphones,
-                size: Responsive.iconSizeLarge(context),
-                color: AppTheme.primary.withValues(alpha: 0.8),
-              ),
-              SizedBox(height: spacing),
-              AnimatedCrossFade(
-                duration: const Duration(milliseconds: 300),
-                crossFadeState: _showText
-                    ? CrossFadeState.showSecond
-                    : CrossFadeState.showFirst,
-                firstChild: Text(
-                  '••••••••••••••••••••',
-                  style: TextStyle(
-                    fontSize: Responsive.fontSizeTitle(context),
-                    letterSpacing: 4,
-                    color: Colors.grey.shade400,
+              // Geri
+              if (_currentIndex > 0)
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => setState(() {
+                      _currentIndex--;
+                      _showText = false;
+                    }),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.primary,
+                      side: const BorderSide(color: AppTheme.primary),
+                      padding: EdgeInsets.symmetric(vertical: Responsive.buttonPaddingVertical(context)),
+                      minimumSize: Size(0, Responsive.minTouchTarget(context)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
+                      ),
+                    ),
+                    child: const Text('Geri'),
                   ),
                 ),
-                secondChild: Text(
-                  _sentences[_currentIndex],
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: Responsive.fontSizeTitleSmall(context),
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.primary,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        SizedBox(height: spacing * 2),
-
-        // Play button
-        Center(
-          child: IconButton.filled(
-            onPressed: _speak,
-            icon: Icon(
-              _playing ? Icons.stop : Icons.play_arrow,
-              size: Responsive.iconSizeLarge(context) * 0.6,
-            ),
-            style: IconButton.styleFrom(
-              backgroundColor: _playing ? Colors.red : AppTheme.primary,
-              foregroundColor: Colors.white,
-              padding: EdgeInsets.all(Responsive.cardPadding(context) * 0.7),
-              minimumSize: Size(
-                Responsive.minTouchTarget(context) * 2,
-                Responsive.minTouchTarget(context) * 2,
-              ),
-            ),
-          ),
-        ),
-        SizedBox(height: spacing),
-
-        // Kullanıcı girişi
-        Text(
-          'Dinlediklerini yaz:',
-          style: TextStyle(
-            fontSize: Responsive.fontSizeBody(context),
-            fontWeight: FontWeight.w600,
-            color: Colors.grey.shade800,
-          ),
-        ),
-        SizedBox(height: spacing * 0.5),
-        Container(
-          width: double.infinity,
-          padding: EdgeInsets.all(Responsive.cardPadding(context)),
-          decoration: AppTheme.cardDecorationFor(context),
-          child: TextField(
-            controller: _controllers[_currentIndex],
-            focusNode: _focusNodes[_currentIndex],
-            maxLines: 3,
-            decoration: InputDecoration(
-              hintText: 'Dinlediğin cümleyi buraya yaz...',
-              hintStyle: TextStyle(color: Colors.grey.shade400),
-              border: InputBorder.none,
-              isDense: true,
-            ),
-            style: TextStyle(fontSize: Responsive.fontSizeBody(context)),
-          ),
-        ),
-        SizedBox(height: spacing * 0.5),
-
-        // Metni göster/gizle
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            onPressed: () => setState(() => _showText = !_showText),
-            icon: Icon(
-              _showText ? Icons.visibility_off : Icons.visibility,
-              size: Responsive.iconSizeSmall(context),
-            ),
-            label: Text(
-              _showText ? 'Metni gizle' : 'Metni göster (ipucu)',
-              style: TextStyle(fontSize: Responsive.fontSizeButton(context)),
-            ),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppTheme.primary,
-              side: const BorderSide(color: AppTheme.primary),
-              padding: EdgeInsets.symmetric(vertical: Responsive.buttonPaddingVertical(context)),
-              minimumSize: Size(0, Responsive.minTouchTarget(context)),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
-              ),
-            ),
-          ),
-        ),
-
-        const Spacer(),
-
-        // İleri / Bitir navigasyonu
-        Row(
-          children: [
-            // Geri
-            if (_currentIndex > 0)
+              if (_currentIndex > 0) SizedBox(width: spacing),
+              // İleri / Bitir
               Expanded(
-                child: OutlinedButton(
-                  onPressed: () => setState(() {
-                    _currentIndex--;
-                    _showText = false;
-                  }),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppTheme.primary,
-                    side: const BorderSide(color: AppTheme.primary),
+                flex: 2,
+                child: ElevatedButton(
+                  onPressed: _currentIndex < _sentences.length - 1
+                      ? () => setState(() {
+                            _currentIndex++;
+                            _showText = false;
+                          })
+                      : _finish,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primary,
+                    foregroundColor: Colors.white,
                     padding: EdgeInsets.symmetric(vertical: Responsive.buttonPaddingVertical(context)),
                     minimumSize: Size(0, Responsive.minTouchTarget(context)),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
                     ),
                   ),
-                  child: const Text('Geri'),
+                  child: Text(_currentIndex < _sentences.length - 1 ? 'İleri' : 'Bitir'),
                 ),
               ),
-            if (_currentIndex > 0) SizedBox(width: spacing),
-            // İleri / Bitir
-            Expanded(
-              flex: 2,
-              child: ElevatedButton(
-                onPressed: _currentIndex < _sentences.length - 1
-                    ? () => setState(() {
-                          _currentIndex++;
-                          _showText = false;
-                        })
-                    : _finish,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primary,
-                  foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(vertical: Responsive.buttonPaddingVertical(context)),
-                  minimumSize: Size(0, Responsive.minTouchTarget(context)),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
-                  ),
-                ),
-                child: Text(_currentIndex < _sentences.length - 1 ? 'İleri' : 'Bitir'),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     );
